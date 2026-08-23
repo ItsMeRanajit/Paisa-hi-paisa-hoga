@@ -33,6 +33,7 @@ export const ProfilePage: React.FC = () => {
     deleteBank,
     addCreditCard,
     deleteCreditCard,
+    emptyAllExpenses,
     resetToMockData,
   } = useFinanceStore();
 
@@ -57,10 +58,11 @@ export const ProfilePage: React.FC = () => {
   const [cardNickname, setCardNickname] = useState('');
   const [creditLimit, setCreditLimit] = useState('');
 
-  // Confirm delete bank/card
+  // Confirm delete bank/card / empty expenses
   const [deletingBankId, setDeletingBankId] = useState<string | null>(null);
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
-  const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
+  const [isEmptyExpensesConfirmOpen, setIsEmptyExpensesConfirmOpen] = useState(false);
+  const [emptyScope, setEmptyScope] = useState<'current_month' | 'all_months'>('current_month');
 
   const handleProfileSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,20 +135,22 @@ export const ProfilePage: React.FC = () => {
         creditTransactions,
         goals,
       });
-      addToast('Generated 8-sheet Excel workbook', 'success');
+      addToast('Generated Excel workbook', 'success');
     } catch (err) {
       console.error(err);
       addToast('Export failed', 'danger');
     }
   };
 
-  const handleReset = () => {
-    resetToMockData();
-    setName('Rahul Sharma');
-    setMobileNumber('+91 98765 43210');
-    setCurrency('₹');
-    setUnplannedLimit('18000');
-    addToast('Restored pre-populated mock dataset', 'info');
+  const handleEmptyExpenses = () => {
+    if (emptyScope === 'current_month') {
+      emptyAllExpenses(activeMonth);
+      addToast(`Cleared all spent amounts & logs for ${activeMonth}. Budgets & goals kept.`, 'success');
+    } else {
+      emptyAllExpenses();
+      addToast('Cleared all spent amounts & logs across all months. Budgets & goals kept.', 'success');
+    }
+    setIsEmptyExpensesConfirmOpen(false);
   };
 
   return (
@@ -348,18 +352,18 @@ export const ProfilePage: React.FC = () => {
 
         <div className="pt-3 border-t border-[#1e232c] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h4 className="text-xs font-semibold text-rose-300">Restore Sample Dataset</h4>
+            <h4 className="text-xs font-semibold text-amber-300">Empty All Expenses (Reset Spends to Zero)</h4>
             <p className="text-[11px] text-zinc-400">
-              Resets all stored local changes back to the pre-populated demo data.
+              Resets spent amounts to ₹0 across all planned categories and clears unplanned & card logs. Preserves all your bank accounts, budgets, categories, and future goals.
             </p>
           </div>
           <button
             type="button"
-            onClick={() => setIsResetConfirmOpen(true)}
-            className="flex items-center gap-1.5 rounded-xl bg-rose-950/30 hover:bg-rose-900/40 text-rose-300 border border-rose-900/50 px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer"
+            onClick={() => setIsEmptyExpensesConfirmOpen(true)}
+            className="flex items-center gap-1.5 rounded-xl bg-amber-950/30 hover:bg-amber-900/40 text-amber-300 border border-amber-800/50 px-3.5 py-2 text-xs font-semibold transition-all cursor-pointer shrink-0"
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            <span>Restore Initial Data</span>
+            <span>Empty All Expenses</span>
           </button>
         </div>
       </div>
@@ -485,14 +489,75 @@ export const ProfilePage: React.FC = () => {
         message="Are you sure you want to remove this credit card and all its transactions?"
       />
 
-      <ConfirmDialog
-        isOpen={isResetConfirmOpen}
-        onClose={() => setIsResetConfirmOpen(false)}
-        onConfirm={handleReset}
-        title="Reset All Data"
-        message="This will reset all your banks, credit cards, monthly records, and goals back to the default sample dataset."
-        confirmLabel="Reset Everything"
-      />
+      {/* Empty All Expenses Modal & Confirm */}
+      <Modal
+        isOpen={isEmptyExpensesConfirmOpen}
+        onClose={() => setIsEmptyExpensesConfirmOpen(false)}
+        title="Empty All Monthly Expenses"
+        subtitle="Reset spent records to zero for a clean slate"
+        maxWidth="sm"
+      >
+        <div className="space-y-4 text-left">
+          <p className="text-xs text-zinc-300 leading-relaxed">
+            This will set <strong className="text-white">Spent Amount to ₹0</strong> for all planned categories, clear all logged unplanned expenses, reset optional commitment spends to 0, and clear credit card charges.
+          </p>
+
+          <div className="rounded-xl bg-[#0c0e12] p-3 border border-[#1c212b] space-y-1.5 text-xs">
+            <p className="font-semibold text-emerald-400">✓ What stays preserved:</p>
+            <ul className="text-zinc-400 text-[11px] list-disc list-inside space-y-0.5">
+              <li>All Bank Accounts and starting balances</li>
+              <li>All Planned Categories and default monthly budget amounts</li>
+              <li>All Future Goals, target dates, and bank allocation strategies</li>
+              <li>Your profile settings and limits</li>
+            </ul>
+          </div>
+
+          <div className="space-y-2">
+            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-wider">Choose Scope</span>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setEmptyScope('current_month')}
+                className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                  emptyScope === 'current_month'
+                    ? 'bg-zinc-800 border-zinc-600 text-white'
+                    : 'bg-[#0c0e12] border-[#1c212b] text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                For {activeMonth} Only
+              </button>
+              <button
+                type="button"
+                onClick={() => setEmptyScope('all_months')}
+                className={`py-2 px-3 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                  emptyScope === 'all_months'
+                    ? 'bg-zinc-800 border-zinc-600 text-white'
+                    : 'bg-[#0c0e12] border-[#1c212b] text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                Across All Months
+              </button>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#1e232c]">
+            <button
+              type="button"
+              onClick={() => setIsEmptyExpensesConfirmOpen(false)}
+              className="rounded-xl px-4 py-2 text-xs font-semibold text-zinc-400 hover:bg-zinc-800 hover:text-white"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleEmptyExpenses}
+              className="rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold px-4 py-2 text-xs transition-all shadow-sm"
+            >
+              Reset Spends to Zero
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

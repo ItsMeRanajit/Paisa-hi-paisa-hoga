@@ -52,171 +52,95 @@ export const exportFinancialWorkbook = ({
     userProfile.unplannedSpendingLimit
   );
 
-  // 1. Sheet: Monthly Summary
-  const monthlySummaryData = [
-    ['PERSONAL FINANCE COMMAND CENTER - MONTHLY REPORT'],
-    [`User: ${userProfile.name}`, `Mobile: ${userProfile.mobileNumber}`],
-    [`Report Month: ${formatMonthDisplay(activeMonth)} (${activeMonth})`, `Generated At: ${new Date().toLocaleString()}`],
-    [],
-    ['Key Metric', 'Amount (INR)', 'Percentage of Fund Pool'],
-    ['Total Monthly Income', aggregate.totalIncome, '—'],
-    ['Total Amount at Banks (Starting Balance)', aggregate.totalAmountAtBank, '—'],
-    ['Total Spending Pool (Income + Bank Amount)', aggregate.totalSpendingPool, '100.0%'],
-    ['Total Planned Expenses Budgeted', aggregate.totalPlannedSet, `${((aggregate.totalPlannedSet / (aggregate.totalSpendingPool || 1)) * 100).toFixed(1)}%`],
-    ['Total Planned Expenses Spent', aggregate.totalPlannedSpent, `${((aggregate.totalPlannedSpent / (aggregate.totalSpendingPool || 1)) * 100).toFixed(1)}%`],
-    ['Total Optional (1-Off Commitments) Budgeted', aggregate.totalOptionalSet, `${((aggregate.totalOptionalSet / (aggregate.totalSpendingPool || 1)) * 100).toFixed(1)}%`],
-    ['Total Optional (1-Off Commitments) Spent', aggregate.totalOptionalSpent, `${((aggregate.totalOptionalSpent / (aggregate.totalSpendingPool || 1)) * 100).toFixed(1)}%`],
-    ['Total Unplanned Expenses Spent', aggregate.totalUnplannedSpent, `${((aggregate.totalUnplannedSpent / (aggregate.totalSpendingPool || 1)) * 100).toFixed(1)}%`],
-    ['Total Outflow (Planned + Optional + Unplanned)', aggregate.totalSpending, `${((aggregate.totalSpending / (aggregate.totalSpendingPool || 1)) * 100).toFixed(1)}%`],
-    ['Final Net Remaining Money in Banks', aggregate.totalRemainingMoney, `${((aggregate.totalRemainingMoney / (aggregate.totalSpendingPool || 1)) * 100).toFixed(1)}%`],
-    ['Overall Monthly Savings Rate (vs Income)', `${aggregate.overallSavingsRate.toFixed(1)}%`, '—'],
-    [],
-    ['Configuration & Parameters'],
-    ['Unplanned Spending Alert Limit', userProfile.unplannedSpendingLimit, 'Monthly Threshold'],
-    ['Credit Card Safe Utilization Target', '< 30.0%', 'RBI / Credit Bureau Standard'],
-  ];
-
-  const wsMonthly = XLSX.utils.aoa_to_sheet(monthlySummaryData);
-  wsMonthly['!cols'] = [{ wch: 45 }, { wch: 22 }, { wch: 26 }];
-  XLSX.utils.book_append_sheet(wb, wsMonthly, 'Monthly Summary');
-
-  // 2. Sheet: Bank Summary
-  const bankSummaryHeaders = [
-    'Bank Name',
-    'Nickname',
-    'Monthly Income',
-    'Amount at Bank',
-    'Total Fund Pool',
-    'Planned Budget',
-    'Planned Spent',
-    'Optional Budget',
-    'Optional Spent',
-    'Remaining (After Planned & Optional)',
-    'Unplanned Spent',
-    'Final Net Remaining',
-    'Unplanned Limit Status',
-    'Total Spending %',
-  ];
-
-  const bankSummaryRows = aggregate.bankSummaries.map(({ bank, metrics }) => [
-    bank.bankName,
-    bank.nickname,
-    metrics.monthlyIncome,
-    metrics.amountAtBank,
-    metrics.totalSpendingPool,
-    metrics.plannedTotalSet,
-    metrics.plannedTotalSpent,
-    metrics.optionalTotalSet,
-    metrics.optionalTotalSpent,
-    metrics.remainingBankAmount,
-    metrics.unplannedTotal,
-    metrics.finalMonthlyRemaining,
-    metrics.unplannedLimitStatus.toUpperCase(),
-    `${metrics.totalSpendingPercentage.toFixed(1)}%`,
-  ]);
-
-  const wsBankSummary = XLSX.utils.aoa_to_sheet([bankSummaryHeaders, ...bankSummaryRows]);
-  wsBankSummary['!cols'] = [
-    { wch: 24 },
-    { wch: 18 },
-    { wch: 16 },
-    { wch: 16 },
-    { wch: 18 },
-    { wch: 16 },
-    { wch: 16 },
-    { wch: 16 },
-    { wch: 16 },
-    { wch: 22 },
-    { wch: 16 },
-    { wch: 20 },
-    { wch: 24 },
-    { wch: 16 },
-  ];
-  XLSX.utils.book_append_sheet(wb, wsBankSummary, 'Bank Summary');
-
-  // 3. Sheet: Planned Expenses
-  const plannedHeaders = [
-    'Bank Name',
-    'Expense Category',
-    'Amount Set (Budget)',
-    'Amount Spent',
-    'Remaining Budget',
+  // ==========================================
+  // SHEET 1: Planned & Optional Expenses (Itemized)
+  // ==========================================
+  const plannedAndOptionalHeaders = [
+    'Bank Account',
+    'Expense Type',
+    'Category / Commitment Title',
+    'Budget Set (INR)',
+    'Amount Spent (INR)',
+    'Remaining Balance (INR)',
     'Utilization %',
+    'Due Date / Schedule',
     'Status',
+    'Notes / Purpose',
   ];
 
-  const plannedRows: any[] = [];
+  const plannedAndOptionalRows: any[] = [];
+
+  // Planned rows from all banks
   aggregate.bankSummaries.forEach(({ bank, metrics }) => {
     metrics.plannedRows.forEach((row) => {
-      plannedRows.push([
+      plannedAndOptionalRows.push([
         bank.bankName,
+        'Planned Recurring',
         row.category,
         row.amountSet,
         row.amountSpent,
         row.remaining,
         `${row.utilizationPercent.toFixed(1)}%`,
+        'Monthly Recurring',
         row.isOverBudget ? 'OVER BUDGET' : row.remaining === 0 ? 'EXACT' : 'WITHIN BUDGET',
+        'Recurring monthly budget',
       ]);
     });
   });
 
-  const wsPlanned = XLSX.utils.aoa_to_sheet([plannedHeaders, ...plannedRows]);
-  wsPlanned['!cols'] = [
-    { wch: 22 },
-    { wch: 28 },
-    { wch: 20 },
-    { wch: 16 },
-    { wch: 18 },
-    { wch: 15 },
-    { wch: 18 },
-  ];
-  XLSX.utils.book_append_sheet(wb, wsPlanned, 'Planned Expenses');
-
-  // 4. Sheet: Optional Expenses (One-Off / Month-Specific Mandatory Commitments)
-  const optionalHeaders = [
-    'Bank Name',
-    'Commitment Title',
-    'Budget Set',
-    'Actual Spent',
-    'Remaining',
-    'Due Date',
-    'Payment Status',
-    'Notes / Purpose',
-  ];
-
-  const optionalRows: any[] = activeOptional.map((item) => {
+  // Optional (1-off) rows from all banks
+  activeOptional.forEach((item) => {
     const bank = banks.find((b) => b.id === item.bankId);
+    const remaining = item.amountSet - item.amountSpent;
+    const utilization = item.amountSet > 0 ? (item.amountSpent / item.amountSet) * 100 : 0;
     const isSettled = item.isPaid || (item.amountSpent >= item.amountSet && item.amountSet > 0);
-    return [
+
+    plannedAndOptionalRows.push([
       bank ? bank.bankName : item.bankId,
+      'Optional (1-Off Mandatory)',
       item.title,
       item.amountSet,
       item.amountSpent,
-      item.amountSet - item.amountSpent,
-      item.dueDate || '—',
-      isSettled ? 'PAID / SETTLED' : 'PENDING',
-      item.notes || '—',
-    ];
+      remaining,
+      `${utilization.toFixed(1)}%`,
+      item.dueDate || 'Current Month',
+      isSettled ? 'SETTLED / PAID' : 'PAYMENT PENDING',
+      item.notes || 'Month-specific mandatory commitment',
+    ]);
   });
 
-  const wsOptional = XLSX.utils.aoa_to_sheet([
-    optionalHeaders,
-    ...(optionalRows.length > 0 ? optionalRows : [['No optional commitments for this month', '', '', '', '', '', '', '']]),
+  const wsPlanned = XLSX.utils.aoa_to_sheet([
+    ['PLANNED & OPTIONAL EXPENSES BREAKDOWN', `Month: ${formatMonthDisplay(activeMonth)}`],
+    [],
+    plannedAndOptionalHeaders,
+    ...(plannedAndOptionalRows.length > 0 ? plannedAndOptionalRows : [['No planned or optional expenses recorded', '', '', '', '', '', '', '', '', '']]),
   ]);
-  wsOptional['!cols'] = [
+  wsPlanned['!cols'] = [
     { wch: 22 },
+    { wch: 26 },
     { wch: 32 },
-    { wch: 16 },
-    { wch: 16 },
-    { wch: 16 },
-    { wch: 16 },
     { wch: 18 },
-    { wch: 35 },
+    { wch: 18 },
+    { wch: 22 },
+    { wch: 15 },
+    { wch: 20 },
+    { wch: 18 },
+    { wch: 36 },
   ];
-  XLSX.utils.book_append_sheet(wb, wsOptional, 'Optional Expenses');
+  XLSX.utils.book_append_sheet(wb, wsPlanned, 'Planned & 1-Off Expenses');
 
-  // 5. Sheet: Unplanned Expenses
-  const unplannedHeaders = ['Bank Name', 'Date', 'Day', 'Expense Description', 'Amount', 'Notes'];
+  // ==========================================
+  // SHEET 2: Unplanned Expenses (Itemized)
+  // ==========================================
+  const unplannedHeaders = [
+    'Bank Account',
+    'Transaction Date',
+    'Day of Month',
+    'Expense Description',
+    'Amount (INR)',
+    'Notes / Memo',
+  ];
+
   const unplannedRows = activeUnplanned.map((item) => {
     const bank = banks.find((b) => b.id === item.bankId);
     return [
@@ -230,46 +154,137 @@ export const exportFinancialWorkbook = ({
   });
 
   const wsUnplanned = XLSX.utils.aoa_to_sheet([
+    ['UNPLANNED & VARIABLE EXPENSES LOG', `Month: ${formatMonthDisplay(activeMonth)}`],
+    [],
     unplannedHeaders,
     ...(unplannedRows.length > 0 ? unplannedRows : [['No unplanned expenses recorded for this month', '', '', '', '', '']]),
   ]);
-  wsUnplanned['!cols'] = [{ wch: 22 }, { wch: 18 }, { wch: 8 }, { wch: 35 }, { wch: 15 }, { wch: 40 }];
+  wsUnplanned['!cols'] = [
+    { wch: 22 },
+    { wch: 20 },
+    { wch: 14 },
+    { wch: 36 },
+    { wch: 16 },
+    { wch: 40 },
+  ];
   XLSX.utils.book_append_sheet(wb, wsUnplanned, 'Unplanned Expenses');
 
-  // 6. Sheet: Credit Cards (Transactions)
-  const creditTxHeaders = ['Card Name', 'Date', 'Category', 'Description', 'Expense Classification', 'Amount'];
+  // ==========================================
+  // SHEET 3: Credit Card Transactions (Itemized)
+  // ==========================================
+  const creditTxHeaders = [
+    'Credit Card',
+    'Transaction Date',
+    'Day',
+    'Expense Category',
+    'Transaction Description',
+    'Expense Classification',
+    'Amount Charged (INR)',
+  ];
+
   const creditTxRows = activeCardTxs.map((tx) => {
     const card = creditCards.find((c) => c.id === tx.cardId);
     return [
       card ? card.cardName : tx.cardId,
       tx.date,
+      tx.day,
       tx.category,
       tx.description,
-      tx.expenseType === 'essential' ? 'Essential Spending' : 'Non-Essential Spending',
+      tx.expenseType === 'essential' ? 'Essential (Needs)' : 'Non-Essential (Wants)',
       tx.amount,
     ];
   });
 
   const wsCreditTxs = XLSX.utils.aoa_to_sheet([
+    ['CREDIT CARD CHARGES & TRANSACTIONS', `Month: ${formatMonthDisplay(activeMonth)}`],
+    [],
     creditTxHeaders,
-    ...(creditTxRows.length > 0 ? creditTxRows : [['No credit card transactions logged this month', '', '', '', '', '']]),
+    ...(creditTxRows.length > 0 ? creditTxRows : [['No credit card transactions logged this month', '', '', '', '', '', '']]),
   ]);
-  wsCreditTxs['!cols'] = [{ wch: 24 }, { wch: 14 }, { wch: 20 }, { wch: 35 }, { wch: 24 }, { wch: 15 }];
-  XLSX.utils.book_append_sheet(wb, wsCreditTxs, 'Credit Cards');
+  wsCreditTxs['!cols'] = [
+    { wch: 24 },
+    { wch: 18 },
+    { wch: 8 },
+    { wch: 22 },
+    { wch: 36 },
+    { wch: 24 },
+    { wch: 20 },
+  ];
+  XLSX.utils.book_append_sheet(wb, wsCreditTxs, 'Card Expenses');
 
-  // 7. Sheet: Credit Summary
+  // ==========================================
+  // SHEET 4: Bank Balances & Fund Pools
+  // ==========================================
+  const bankSummaryHeaders = [
+    'Bank Account',
+    'Account Nickname',
+    'Monthly Income (INR)',
+    'Starting Balance (INR)',
+    'Total Spending Pool (INR)',
+    'Planned Spent (INR)',
+    'Optional Spent (INR)',
+    'Unplanned Spent (INR)',
+    'Total Outflow (INR)',
+    'Remaining Bank Balance (INR)',
+    'Outflow % of Pool',
+    'Unplanned Limit Status',
+  ];
+
+  const bankSummaryRows = aggregate.bankSummaries.map(({ bank, metrics }) => {
+    const totalOutflow = metrics.plannedTotalSpent + metrics.optionalTotalSpent + metrics.unplannedTotal;
+    return [
+      bank.bankName,
+      bank.nickname,
+      metrics.monthlyIncome,
+      metrics.amountAtBank,
+      metrics.totalSpendingPool,
+      metrics.plannedTotalSpent,
+      metrics.optionalTotalSpent,
+      metrics.unplannedTotal,
+      totalOutflow,
+      metrics.finalMonthlyRemaining,
+      `${metrics.totalSpendingPercentage.toFixed(1)}%`,
+      metrics.unplannedLimitStatus.toUpperCase().replace('_', ' '),
+    ];
+  });
+
+  const wsBankSummary = XLSX.utils.aoa_to_sheet([
+    ['BANK ACCOUNTS, BALANCES & FUND POOLS', `Month: ${formatMonthDisplay(activeMonth)}`],
+    [],
+    bankSummaryHeaders,
+    ...bankSummaryRows,
+  ]);
+  wsBankSummary['!cols'] = [
+    { wch: 24 },
+    { wch: 20 },
+    { wch: 20 },
+    { wch: 22 },
+    { wch: 24 },
+    { wch: 18 },
+    { wch: 18 },
+    { wch: 20 },
+    { wch: 18 },
+    { wch: 26 },
+    { wch: 18 },
+    { wch: 22 },
+  ];
+  XLSX.utils.book_append_sheet(wb, wsBankSummary, 'Bank Balances');
+
+  // ==========================================
+  // SHEET 5: Credit Cards Summary
+  // ==========================================
   const creditSummaryHeaders = [
-    'Card Name',
+    'Credit Card',
     'Issuer',
-    'Credit Limit',
-    'Current Outstanding',
-    'Remaining Limit',
+    'Credit Limit (INR)',
+    'Current Outstanding (INR)',
+    'Available Limit (INR)',
     'Utilization %',
-    'Utilization Status',
-    'Essential Spending',
-    'Non-Essential Spending',
-    'Last Payment Date',
-    'Last Payment Amount',
+    'Credit Health Status (<30%)',
+    'Essential Spending (INR)',
+    'Non-Essential Spending (INR)',
+    'Last Bill Payment Date',
+    'Last Payment Amount (INR)',
   ];
 
   const creditSummaryRows = creditCards.map((card) => {
@@ -291,37 +306,44 @@ export const exportFinancialWorkbook = ({
       metrics.essentialAmount,
       metrics.nonEssentialAmount,
       card.lastPaymentDate || '—',
-      card.lastPaymentAmount || '—',
+      card.lastPaymentAmount || 0,
     ];
   });
 
-  const wsCreditSummary = XLSX.utils.aoa_to_sheet([creditSummaryHeaders, ...creditSummaryRows]);
+  const wsCreditSummary = XLSX.utils.aoa_to_sheet([
+    ['CREDIT CARDS UTILIZATION & EXPOSURE', `Month: ${formatMonthDisplay(activeMonth)}`],
+    [],
+    creditSummaryHeaders,
+    ...creditSummaryRows,
+  ]);
   wsCreditSummary['!cols'] = [
     { wch: 24 },
     { wch: 16 },
-    { wch: 16 },
+    { wch: 18 },
+    { wch: 24 },
     { wch: 20 },
-    { wch: 16 },
     { wch: 14 },
-    { wch: 20 },
-    { wch: 18 },
+    { wch: 24 },
     { wch: 22 },
-    { wch: 18 },
-    { wch: 20 },
+    { wch: 26 },
+    { wch: 22 },
+    { wch: 24 },
   ];
   XLSX.utils.book_append_sheet(wb, wsCreditSummary, 'Credit Summary');
 
-  // 8. Sheet: Future Goals
+  // ==========================================
+  // SHEET 6: Future Goals & Allocations
+  // ==========================================
   const goalHeaders = [
     'Goal Name',
-    'Target Amount',
-    'Total Saved',
-    'Remaining Target',
-    'Progress %',
+    'Target Amount (INR)',
+    'Total Saved (INR)',
+    'Remaining Amount (INR)',
+    'Funded %',
     'Target Date',
-    'Monthly Target',
+    'Monthly Target (INR)',
     'Status',
-    'Allocated Bank Strategies',
+    'Bank Allocations / Funding Strategy',
   ];
 
   const goalRows = goals.map((goal) => {
@@ -348,19 +370,52 @@ export const exportFinancialWorkbook = ({
     ];
   });
 
-  const wsGoals = XLSX.utils.aoa_to_sheet([goalHeaders, ...goalRows]);
+  const wsGoals = XLSX.utils.aoa_to_sheet([
+    ['FUTURE GOALS & MULTI-BANK SAVING COMMITMENTS', `Report Month: ${formatMonthDisplay(activeMonth)}`],
+    [],
+    goalHeaders,
+    ...goalRows,
+  ]);
   wsGoals['!cols'] = [
-    { wch: 26 },
-    { wch: 16 },
-    { wch: 16 },
+    { wch: 28 },
     { wch: 18 },
-    { wch: 14 },
+    { wch: 18 },
+    { wch: 22 },
+    { wch: 12 },
     { wch: 16 },
+    { wch: 20 },
     { wch: 16 },
-    { wch: 16 },
-    { wch: 50 },
+    { wch: 55 },
   ];
   XLSX.utils.book_append_sheet(wb, wsGoals, 'Future Goals');
+
+  // ==========================================
+  // SHEET 7: Monthly Executive Summary
+  // ==========================================
+  const monthlySummaryData = [
+    ['PERSONAL FINANCE COMMAND CENTER - EXECUTIVE REPORT'],
+    [`User: ${userProfile.name}`, `Mobile: ${userProfile.mobileNumber}`],
+    [`Report Month: ${formatMonthDisplay(activeMonth)} (${activeMonth})`, `Generated At: ${new Date().toLocaleString()}`],
+    [],
+    ['Executive Summary Metric', 'Amount (INR)', 'Percentage of Total Fund Pool'],
+    ['Total Monthly Income', aggregate.totalIncome, '—'],
+    ['Total Reserves / Starting Bank Balances', aggregate.totalAmountAtBank, '—'],
+    ['Total Spending Pool (Income + Reserves)', aggregate.totalSpendingPool, '100.0%'],
+    ['Total Planned Expenses Spent', aggregate.totalPlannedSpent, `${((aggregate.totalPlannedSpent / (aggregate.totalSpendingPool || 1)) * 100).toFixed(1)}%`],
+    ['Total Optional (1-Off Commitments) Spent', aggregate.totalOptionalSpent, `${((aggregate.totalOptionalSpent / (aggregate.totalSpendingPool || 1)) * 100).toFixed(1)}%`],
+    ['Total Unplanned Expenses Spent', aggregate.totalUnplannedSpent, `${((aggregate.totalUnplannedSpent / (aggregate.totalSpendingPool || 1)) * 100).toFixed(1)}%`],
+    ['Total Combined Outflow (Planned + Optional + Unplanned)', aggregate.totalSpending, `${((aggregate.totalSpending / (aggregate.totalSpendingPool || 1)) * 100).toFixed(1)}%`],
+    ['Final Net Remaining Reserves in Banks', aggregate.totalRemainingMoney, `${((aggregate.totalRemainingMoney / (aggregate.totalSpendingPool || 1)) * 100).toFixed(1)}%`],
+    ['Overall Monthly Savings Rate (vs Income)', `${aggregate.overallSavingsRate.toFixed(1)}%`, '—'],
+    [],
+    ['Risk & Governance Parameters', 'Value', 'Standard'],
+    ['Unplanned Spending Alert Limit', userProfile.unplannedSpendingLimit, 'Monthly Threshold'],
+    ['Credit Card Safe Utilization Target', '< 30.0%', 'Safe Credit Bureau Standard'],
+  ];
+
+  const wsMonthly = XLSX.utils.aoa_to_sheet(monthlySummaryData);
+  wsMonthly['!cols'] = [{ wch: 50 }, { wch: 22 }, { wch: 30 }];
+  XLSX.utils.book_append_sheet(wb, wsMonthly, 'Executive Summary');
 
   // Export workbook
   const filename = `Finance_Command_Center_${activeMonth}_Report.xlsx`;

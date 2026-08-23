@@ -95,6 +95,7 @@ interface FinanceState {
   removeGoalAllocation: (goalId: string, allocationId: string) => void;
 
   // System & Reset
+  emptyAllExpenses: (targetMonth?: string) => void;
   resetToMockData: () => void;
   clearAllData: () => void;
 }
@@ -544,6 +545,58 @@ export const useFinanceStore = create<FinanceState>()(
           ),
         })),
 
+      emptyAllExpenses: (targetMonth) =>
+        set((state) => {
+          const monthToClean = targetMonth || state.activeMonth;
+
+          const updatedMonthlyData: Record<string, Record<string, BankMonthlyData>> = {};
+
+          Object.entries(state.monthlyData).forEach(([mKey, bankMap]) => {
+            if (targetMonth && mKey !== monthToClean) {
+              updatedMonthlyData[mKey] = bankMap;
+            } else {
+              const cleanedBankMap: Record<string, BankMonthlyData> = {};
+              Object.entries(bankMap).forEach(([bId, bData]) => {
+                const cleanedPlannedVals: Record<string, { amountSet?: number; amountSpent: number }> = {};
+                Object.entries(bData.plannedExpenseValues || {}).forEach(([pId, pVal]) => {
+                  cleanedPlannedVals[pId] = {
+                    ...(pVal.amountSet !== undefined ? { amountSet: pVal.amountSet } : {}),
+                    amountSpent: 0,
+                  };
+                });
+
+                cleanedBankMap[bId] = {
+                  ...bData,
+                  plannedExpenseValues: cleanedPlannedVals,
+                  unplannedExpenseIds: [],
+                };
+              });
+              updatedMonthlyData[mKey] = cleanedBankMap;
+            }
+          });
+
+          const cleanedUnplanned = targetMonth
+            ? state.unplannedExpenses.filter((u) => u.month !== monthToClean)
+            : [];
+
+          const cleanedCreditTxs = targetMonth
+            ? state.creditTransactions.filter((t) => t.month !== monthToClean)
+            : [];
+
+          const cleanedOptional = targetMonth
+            ? state.optionalExpenses.map((o) =>
+                o.month === monthToClean ? { ...o, amountSpent: 0, isPaid: false } : o
+              )
+            : state.optionalExpenses.map((o) => ({ ...o, amountSpent: 0, isPaid: false }));
+
+          return {
+            monthlyData: updatedMonthlyData,
+            unplannedExpenses: cleanedUnplanned,
+            creditTransactions: cleanedCreditTxs,
+            optionalExpenses: cleanedOptional,
+          };
+        }),
+
       resetToMockData: () =>
         set({
           userProfile: INITIAL_USER_PROFILE,
@@ -573,7 +626,7 @@ export const useFinanceStore = create<FinanceState>()(
         }),
     }),
     {
-      name: 'finance-command-center-storage-v1',
+      name: 'finance-command-center-clean-v1',
       storage: createJSONStorage(() => localStorage),
     }
   )

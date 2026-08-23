@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Paisa Hi Paisa Hoga</string>
+    <string name="title_activity_main">Paisa Hi Paisa Hoga</string>
+    <string name="package_name">com.phph.app</string>
+    <string name="custom_url_scheme">com.phph.app</string>
+</resources>
