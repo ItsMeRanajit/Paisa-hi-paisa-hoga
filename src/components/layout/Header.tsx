@@ -43,7 +43,10 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-30 w-full border-b border-[#1c212b] bg-[#0c0e12]/90 backdrop-blur-md transition-all">
+    <header
+      className="sticky top-0 z-30 w-full border-b border-[#1c212b] bg-[#0c0e12]/90 backdrop-blur-md transition-all"
+      style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
+    >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="flex h-15 items-center justify-between gap-4">
           {/* Minimalist Logo & App Title */}
