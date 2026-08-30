@@ -12,17 +12,18 @@ export const QuickActionModal: React.FC = () => {
     activeMonth,
     banks,
     monthlyData,
+    optionalExpenses,
     creditCards,
     goals,
     addPlannedSpend,
     addRecurringPlannedSpend,
     addPortionPlannedSpend,
     updatePlannedSpent,
-    addPlannedCategoryToBank,
-    addOptionalExpense,
+    updateOptionalExpense,
     addUnplannedExpense,
     addCreditTransaction,
     updateGoalSavedAmount,
+    setSelectedBankId,
     setActiveTab: navigateTab,
   } = useFinanceStore();
 
@@ -35,26 +36,18 @@ export const QuickActionModal: React.FC = () => {
   const [plannedDesc, setPlannedDesc] = useState('');
   const [plannedAmount, setPlannedAmount] = useState('');
   const [plannedMode, setPlannedMode] = useState<'add' | 'set'>('add');
-  // New planned category inline creation if bank has 0 categories
-  const [isCreatingNewCat, setIsCreatingNewCat] = useState(false);
-  const [newCatName, setNewCatName] = useState('');
-  const [newCatBudget, setNewCatBudget] = useState('');
-  const [newCatPaymentType, setNewCatPaymentType] = useState<ExpensePaymentType>('recurring');
 
   // Month Specific Commitment Form State
   const [optionalBankId, setOptionalBankId] = useState('');
-  const [optionalTitle, setOptionalTitle] = useState('');
-  const [optionalSet, setOptionalSet] = useState('');
-  const [optionalSpent, setOptionalSpent] = useState('');
-  const [optionalDueDate, setOptionalDueDate] = useState('');
-  const [optionalNotes, setOptionalNotes] = useState('');
+  const [optionalItemId, setOptionalItemId] = useState('');
+  const [optionalSpendAmount, setOptionalSpendAmount] = useState('');
+  const [optionalMode, setOptionalMode] = useState<'add' | 'set'>('add');
 
   // Unplanned Form State
   const [bankId, setBankId] = useState('');
   const [day, setDay] = useState(new Date().getDate().toString());
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
-  const [notes, setNotes] = useState('');
 
   // Credit Card Form State
   const [cardId, setCardId] = useState('');
@@ -81,11 +74,14 @@ export const QuickActionModal: React.FC = () => {
 
         if (firstBank.plannedCategories && firstBank.plannedCategories.length > 0) {
           setPlannedMasterId(firstBank.plannedCategories[0].id);
-          setIsCreatingNewCat(false);
         } else {
           setPlannedMasterId('');
-          setIsCreatingNewCat(true);
         }
+
+        const firstBankOpts = optionalExpenses.filter(
+          (o) => o.bankId === firstBank.id && o.month === activeMonth
+        );
+        setOptionalItemId(firstBankOpts[0]?.id || '');
       }
       if (creditCards.length > 0) {
         setCardId(creditCards[0].id);
@@ -94,7 +90,7 @@ export const QuickActionModal: React.FC = () => {
         setGoalId(goals[0].id);
       }
     }
-  }, [isQuickAddOpen, quickAddType, banks, creditCards, goals]);
+  }, [isQuickAddOpen, quickAddType, banks, optionalExpenses, activeMonth, creditCards, goals]);
 
   // When planned bank changes, update selected master category
   const handlePlannedBankChange = (newBankId: string) => {
@@ -102,11 +98,18 @@ export const QuickActionModal: React.FC = () => {
     const b = banks.find((item) => item.id === newBankId);
     if (b && b.plannedCategories && b.plannedCategories.length > 0) {
       setPlannedMasterId(b.plannedCategories[0].id);
-      setIsCreatingNewCat(false);
     } else {
       setPlannedMasterId('');
-      setIsCreatingNewCat(true);
     }
+  };
+
+  // When optional bank changes, update selected commitment item
+  const handleOptionalBankChange = (newBankId: string) => {
+    setOptionalBankId(newBankId);
+    const bankOpts = optionalExpenses.filter(
+      (o) => o.bankId === newBankId && o.month === activeMonth
+    );
+    setOptionalItemId(bankOpts[0]?.id || '');
   };
 
   const currentPlannedBank = banks.find((b) => b.id === plannedBankId) || banks[0];
@@ -116,42 +119,6 @@ export const QuickActionModal: React.FC = () => {
 
     if (!currentPlannedBank) {
       addToast('Please add a bank account first in Profile', 'warning');
-      return;
-    }
-
-    if (isCreatingNewCat) {
-      if (!newCatName.trim() || !newCatBudget || !plannedAmount) {
-        addToast('Please enter category name, budget, and spend amount', 'warning');
-        return;
-      }
-      const budgetAmt = parseFloat(newCatBudget) || 0;
-      const spentAmt = parseFloat(plannedAmount) || 0;
-
-      const createdCatId = addPlannedCategoryToBank(currentPlannedBank.id, newCatName.trim(), budgetAmt, newCatPaymentType);
-      if (spentAmt > 0) {
-        if (newCatPaymentType === 'recurring') {
-          addRecurringPlannedSpend(currentPlannedBank.id, activeMonth, createdCatId, {
-            date: plannedDate,
-            description: plannedDesc.trim() || 'Initial Payment',
-            amount: spentAmt,
-          });
-        } else if (newCatPaymentType === 'in_portions') {
-          addPortionPlannedSpend(currentPlannedBank.id, activeMonth, createdCatId, {
-            date: plannedDate,
-            label: plannedDesc.trim() || 'Portion 1',
-            amount: spentAmt,
-          });
-        } else {
-          addPlannedSpend(currentPlannedBank.id, activeMonth, createdCatId, spentAmt);
-        }
-      }
-
-      addToast(`Created category "${newCatName.trim()}" & logged ₹${spentAmt.toLocaleString()}`, 'success');
-      setNewCatName('');
-      setNewCatBudget('');
-      setPlannedAmount('');
-      setPlannedDesc('');
-      closeQuickAdd();
       return;
     }
 
@@ -207,36 +174,31 @@ export const QuickActionModal: React.FC = () => {
       return;
     }
 
-    if (!optionalTitle.trim()) {
-      addToast('Please enter a commitment title', 'warning');
+    const bankOpts = optionalExpenses.filter(
+      (o) => o.bankId === targetBankId && o.month === activeMonth
+    );
+    const selectedItem = bankOpts.find((o) => o.id === (optionalItemId || bankOpts[0]?.id));
+
+    if (!selectedItem) {
+      addToast('Please select a month commitment', 'warning');
       return;
     }
 
-    if (!optionalSet || parseFloat(optionalSet) <= 0) {
-      addToast('Please enter a budget amount for this commitment', 'warning');
+    if (!optionalSpendAmount || parseFloat(optionalSpendAmount) <= 0) {
+      addToast('Please enter a valid spend amount', 'warning');
       return;
     }
 
-    const setAmt = parseFloat(optionalSet) || 0;
-    const spentAmt = parseFloat(optionalSpent) || 0;
+    const amt = parseFloat(optionalSpendAmount) || 0;
+    const newSpent = optionalMode === 'add' ? selectedItem.amountSpent + amt : amt;
 
-    addOptionalExpense({
-      bankId: targetBankId,
-      month: activeMonth,
-      title: optionalTitle.trim(),
-      amountSet: setAmt,
-      amountSpent: spentAmt,
-      dueDate: optionalDueDate || undefined,
-      notes: optionalNotes,
-      isPaid: spentAmt >= setAmt && setAmt > 0,
+    updateOptionalExpense(selectedItem.id, {
+      amountSpent: newSpent,
+      isPaid: newSpent >= selectedItem.amountSet && selectedItem.amountSet > 0,
     });
 
-    addToast(`Added month commitment "${optionalTitle.trim()}"`, 'success');
-    setOptionalTitle('');
-    setOptionalSet('');
-    setOptionalSpent('');
-    setOptionalDueDate('');
-    setOptionalNotes('');
+    addToast(`Logged spend of ₹${amt.toLocaleString()} for "${selectedItem.title}"`, 'success');
+    setOptionalSpendAmount('');
     closeQuickAdd();
   };
 
@@ -268,13 +230,11 @@ export const QuickActionModal: React.FC = () => {
       day: dayNum,
       description: description.trim(),
       amount: amtNum,
-      notes: notes.trim(),
     });
 
     addToast(`Logged ₹${amtNum.toLocaleString()} unplanned expense`, 'success');
     setDescription('');
     setAmount('');
-    setNotes('');
     closeQuickAdd();
   };
 
@@ -427,20 +387,10 @@ export const QuickActionModal: React.FC = () => {
             options={banks.map((b) => ({ value: b.id, label: `${b.bankName} (${b.nickname})` }))}
           />
 
-          {!isCreatingNewCat && currentPlannedBank?.plannedCategories && currentPlannedBank.plannedCategories.length > 0 ? (
+          {currentPlannedBank?.plannedCategories && currentPlannedBank.plannedCategories.length > 0 ? (
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-zinc-300">Planned Budget Category</label>
-                  <button
-                    type="button"
-                    onClick={() => setIsCreatingNewCat(true)}
-                    className="text-[11px] font-medium text-zinc-400 hover:text-white underline cursor-pointer"
-                  >
-                    + New Category
-                  </button>
-                </div>
-
+                <label className="text-xs font-semibold text-zinc-300">Planned Budget Category</label>
                 <Select
                   value={plannedMasterId || currentPlannedBank.plannedCategories[0]?.id}
                   onChange={(e) => setPlannedMasterId(e.target.value)}
@@ -601,75 +551,42 @@ export const QuickActionModal: React.FC = () => {
                   </div>
                 );
               })()}
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={closeQuickAdd}
+                  className="rounded-xl px-4 py-2 text-xs font-semibold text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-xl bg-zinc-200 hover:bg-white text-zinc-950 px-4 py-2 text-xs font-semibold"
+                >
+                  Save Planned Spend
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="rounded-xl bg-[#0c0e12] p-3.5 border border-[#1c212b] space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold text-white">Create New Planned Category</span>
-                {currentPlannedBank?.plannedCategories && currentPlannedBank.plannedCategories.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setIsCreatingNewCat(false)}
-                    className="text-[11px] font-medium text-zinc-400 hover:text-white underline cursor-pointer"
-                  >
-                    Select Existing
-                  </button>
-                )}
-              </div>
-              <Input
-                label="Category Name"
-                placeholder="e.g. Food & Dining, Travel, House Rent"
-                value={newCatName}
-                onChange={(e) => setNewCatName(e.target.value)}
-                required
-                autoFocus
-              />
-              <Input
-                label="Monthly Budget Target (Amount Set)"
-                type="number"
-                prefixSymbol="₹"
-                placeholder="e.g. 15000"
-                value={newCatBudget}
-                onChange={(e) => setNewCatBudget(e.target.value)}
-                helperText="Carries forward automatically month after month"
-                required
-              />
-              <Select
-                label="Payment Type"
-                value={newCatPaymentType}
-                onChange={(e) => setNewCatPaymentType(e.target.value as ExpensePaymentType)}
-                options={[
-                  { value: 'recurring', label: 'Recurring (Smaller amounts over time)' },
-                  { value: 'in_portions', label: 'In Portions (Installment chunks)' },
-                  { value: 'one_time', label: 'One-time (Full single payment)' },
-                ]}
-              />
-              <Input
-                label="Initial Spent Amount (Optional)"
-                type="number"
-                prefixSymbol="₹"
-                placeholder="e.g. 500"
-                value={plannedAmount}
-                onChange={(e) => setPlannedAmount(e.target.value)}
-              />
+            <div className="rounded-xl border border-dashed border-[#222731] bg-[#0c0e12] p-5 text-center space-y-2">
+              <p className="text-xs font-semibold text-zinc-300">No Planned Categories Configured</p>
+              <p className="text-[11px] text-zinc-400">
+                You must add planned budget categories from the Bank Workspace → Planned Expenses section first before logging spend.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  closeQuickAdd();
+                  setSelectedBankId(currentPlannedBank?.id || banks[0]?.id);
+                  navigateTab('banks');
+                }}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-400 hover:text-indigo-300 underline cursor-pointer pt-1"
+              >
+                Go to Bank Workspace
+              </button>
             </div>
           )}
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={closeQuickAdd}
-              className="rounded-xl px-4 py-2 text-xs font-semibold text-zinc-400 hover:bg-zinc-800 hover:text-white"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="rounded-xl bg-zinc-200 hover:bg-white text-zinc-950 px-4 py-2 text-xs font-semibold"
-            >
-              Save Planned Spend
-            </button>
-          </div>
         </form>
       )}
 
@@ -679,70 +596,131 @@ export const QuickActionModal: React.FC = () => {
           <Select
             label="Bank Account"
             value={optionalBankId || banks[0]?.id}
-            onChange={(e) => setOptionalBankId(e.target.value)}
+            onChange={(e) => handleOptionalBankChange(e.target.value)}
             options={banks.map((b) => ({ value: b.id, label: `${b.bankName} (${b.nickname})` }))}
           />
 
-          <Input
-            label="Commitment Title"
-            placeholder="e.g. Annual Car Insurance, Society Paint Cess"
-            value={optionalTitle}
-            onChange={(e) => setOptionalTitle(e.target.value)}
-            helperText={`Applies to ${activeMonth} only; does not carry forward`}
-            required
-            autoFocus
-          />
+          {(() => {
+            const currentBankOptionalList = optionalExpenses.filter(
+              (o) => o.bankId === (optionalBankId || banks[0]?.id) && o.month === activeMonth
+            );
 
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Budget (Amount Set)"
-              type="number"
-              prefixSymbol="₹"
-              placeholder="e.g. 12000"
-              value={optionalSet}
-              onChange={(e) => setOptionalSet(e.target.value)}
-              required
-            />
-            <Input
-              label="Already Spent"
-              type="number"
-              prefixSymbol="₹"
-              placeholder="e.g. 0 or 12000"
-              value={optionalSpent}
-              onChange={(e) => setOptionalSpent(e.target.value)}
-              helperText="Optional (default 0)"
-            />
-          </div>
+            if (currentBankOptionalList.length === 0) {
+              return (
+                <div className="rounded-xl border border-dashed border-[#222731] bg-[#0c0e12] p-5 text-center space-y-2">
+                  <p className="text-xs font-semibold text-zinc-300">No Month Commitments Found</p>
+                  <p className="text-[11px] text-zinc-400">
+                    You must add month-specific commitment plans from the Bank Workspace → Month Specific Commitments section first before logging spend.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeQuickAdd();
+                      setSelectedBankId(optionalBankId || banks[0]?.id);
+                      navigateTab('banks');
+                    }}
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-purple-400 hover:text-purple-300 underline cursor-pointer pt-1"
+                  >
+                    Go to Month Specific Commitments
+                  </button>
+                </div>
+              );
+            }
 
-          <Input
-            label="Due Date (Optional)"
-            type="date"
-            value={optionalDueDate}
-            onChange={(e) => setOptionalDueDate(e.target.value)}
-          />
+            const selOpt = currentBankOptionalList.find(
+              (o) => o.id === (optionalItemId || currentBankOptionalList[0]?.id)
+            ) || currentBankOptionalList[0];
 
-          <Input
-            label="Notes / Purpose (Optional)"
-            placeholder="e.g. One-time yearly expense"
-            value={optionalNotes}
-            onChange={(e) => setOptionalNotes(e.target.value)}
-          />
+            const optRemaining = selOpt ? selOpt.amountSet - selOpt.amountSpent : 0;
 
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={closeQuickAdd}
-              className="rounded-xl px-4 py-2 text-xs font-semibold text-zinc-400 hover:bg-zinc-800 hover:text-white"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="rounded-xl bg-zinc-200 hover:bg-white text-zinc-950 px-4 py-2 text-xs font-semibold"
-            >
-              Save Commitment
-            </button>
-          </div>
+            return (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-zinc-300">Commitment Plan</label>
+                  <Select
+                    value={optionalItemId || currentBankOptionalList[0]?.id}
+                    onChange={(e) => setOptionalItemId(e.target.value)}
+                    options={currentBankOptionalList.map((o) => ({
+                      value: o.id,
+                      label: o.title,
+                    }))}
+                  />
+                </div>
+
+                {selOpt && (
+                  <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-[#0c0e12] px-3 py-2 border border-[#1c212b] text-[11px]">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold border bg-purple-950/60 text-purple-300 border-purple-800/40">
+                        1-Mo Commitment
+                      </span>
+                      <span className="text-zinc-400">
+                        Budget: <strong className="text-zinc-200 font-mono">₹{selOpt.amountSet.toLocaleString()}</strong>
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 font-mono">
+                      <span className="text-zinc-400">
+                        Spent: <strong className="text-zinc-200">₹{selOpt.amountSpent.toLocaleString()}</strong>
+                      </span>
+                      <span className="text-zinc-600">•</span>
+                      <span className={optRemaining < 0 ? 'text-rose-400' : 'text-emerald-400'}>
+                        {optRemaining < 0 ? 'Deficit: ' : 'Left: '}₹{Math.abs(optRemaining).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-3 rounded-xl bg-[#0c0e12] p-3 border border-[#1c212b]">
+                  <div className="grid grid-cols-2 gap-2 rounded-xl bg-[#0b0d11] p-1 border border-[#222731]">
+                    <button
+                      type="button"
+                      onClick={() => setOptionalMode('add')}
+                      className={`py-1 text-xs font-semibold rounded-lg transition-all ${
+                        optionalMode === 'add' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      + Add to Spent
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOptionalMode('set')}
+                      className={`py-1 text-xs font-semibold rounded-lg transition-all ${
+                        optionalMode === 'set' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      Set Total Spent
+                    </button>
+                  </div>
+
+                  <Input
+                    label={optionalMode === 'add' ? 'Amount to Add to Spent' : 'Set Total Spent Amount'}
+                    type="number"
+                    prefixSymbol="₹"
+                    placeholder="e.g. 4500"
+                    value={optionalSpendAmount}
+                    onChange={(e) => setOptionalSpendAmount(e.target.value)}
+                    required
+                    autoFocus
+                  />
+                </div>
+
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={closeQuickAdd}
+                    className="rounded-xl px-4 py-2 text-xs font-semibold text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded-xl bg-zinc-200 hover:bg-white text-zinc-950 px-4 py-2 text-xs font-semibold"
+                  >
+                    Save Commitment Spend
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
         </form>
       )}
 
@@ -788,13 +766,6 @@ export const QuickActionModal: React.FC = () => {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
-          />
-
-          <Input
-            label="Notes (Optional)"
-            placeholder="e.g. Emergency repair"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
           />
 
           <div className="flex justify-end gap-2 pt-2">

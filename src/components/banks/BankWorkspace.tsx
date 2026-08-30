@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Landmark, Plus, Settings, PlusCircle, CalendarPlus, Sparkles } from 'lucide-react';
+import { Landmark, Settings, PlusCircle, CalendarPlus, Sparkles } from 'lucide-react';
 import { useFinanceStore } from '../../store/useFinanceStore';
 import { calculateBankMetrics } from '../../utils/calculations';
 import { FundPoolSection } from './FundPoolSection';
@@ -25,7 +25,6 @@ export const BankWorkspace: React.FC = () => {
     goals,
     activeMonth,
     userProfile,
-    addBank,
     addPlannedSpend,
     updatePlannedSpent,
     addOptionalExpense,
@@ -34,11 +33,6 @@ export const BankWorkspace: React.FC = () => {
   } = useFinanceStore();
 
   const { addToast } = useUIStore();
-
-  // Add Bank Modal State
-  const [isAddBankModalOpen, setIsAddBankModalOpen] = useState(false);
-  const [newBankName, setNewBankName] = useState('');
-  const [newNickname, setNewNickname] = useState('');
 
   // Quick Action Modal States
   const [isQuickLogSpendOpen, setIsQuickLogSpendOpen] = useState(false);
@@ -62,24 +56,6 @@ export const BankWorkspace: React.FC = () => {
     : banks[0]?.id || null;
 
   const currentBank = banks.find((b) => b.id === currentBankId);
-
-  const handleCreateBank = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newBankName) return;
-
-    const newId = addBank({
-      bankName: newBankName,
-      nickname: newNickname || 'Primary Account',
-      color: '#71717a',
-      plannedCategories: [],
-    });
-
-    setSelectedBankId(newId);
-    setIsAddBankModalOpen(false);
-    setNewBankName('');
-    setNewNickname('');
-    addToast(`Created bank workspace: ${newBankName}`, 'success');
-  };
 
   const handleQuickLogPlanned = (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,59 +119,13 @@ export const BankWorkspace: React.FC = () => {
 
   if (banks.length === 0 || !currentBank) {
     return (
-      <>
-        <EmptyState
-          icon={Landmark}
-          title="No Bank Accounts Configured"
-          description="Add your first bank account to begin tracking fund pools, planned budgets, optional commitments, and unplanned spending."
-          actionLabel="Create Bank Account"
-          onAction={() => setIsAddBankModalOpen(true)}
-        />
-
-        {/* Add Bank Modal */}
-        <Modal
-          isOpen={isAddBankModalOpen}
-          onClose={() => setIsAddBankModalOpen(false)}
-          title="Add Bank Account"
-          subtitle="Create a new workspace"
-          maxWidth="sm"
-        >
-          <form onSubmit={handleCreateBank} className="space-y-3.5 text-left">
-            <Input
-              label="Bank Name"
-              placeholder="e.g. Axis Bank, Kotak Mahindra"
-              value={newBankName}
-              onChange={(e) => setNewBankName(e.target.value)}
-              required
-              autoFocus
-            />
-
-            <Input
-              label="Account Nickname"
-              placeholder="e.g. Salary, Emergency, Investment"
-              value={newNickname}
-              onChange={(e) => setNewNickname(e.target.value)}
-              required
-            />
-
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsAddBankModalOpen(false)}
-                className="rounded-xl px-4 py-2 text-xs font-semibold text-zinc-400 hover:bg-zinc-800 hover:text-white"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="rounded-xl bg-zinc-200 hover:bg-white text-zinc-950 px-4 py-2 text-xs font-semibold"
-              >
-                Create Workspace
-              </button>
-            </div>
-          </form>
-        </Modal>
-      </>
+      <EmptyState
+        icon={Landmark}
+        title="No Bank Accounts Configured"
+        description="Add your first bank account in Profile & Settings to begin tracking fund pools, planned budgets, optional commitments, and unplanned spending."
+        actionLabel="Go to Profile to Add Bank"
+        onAction={() => setActiveTab('profile')}
+      />
     );
   }
 
@@ -240,15 +170,6 @@ export const BankWorkspace: React.FC = () => {
               </button>
             );
           })}
-
-          <button
-            type="button"
-            onClick={() => setIsAddBankModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium text-zinc-400 bg-[#101318]/50 border border-dashed border-[#222731] hover:border-zinc-600 hover:text-zinc-200 transition-all shrink-0 cursor-pointer"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            <span>Add Bank</span>
-          </button>
         </div>
 
         <button
@@ -529,50 +450,6 @@ export const BankWorkspace: React.FC = () => {
               className="rounded-xl bg-zinc-200 hover:bg-white text-zinc-950 px-4 py-2 text-xs font-semibold"
             >
               Save Unplanned Expense
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Add Bank Modal */}
-      <Modal
-        isOpen={isAddBankModalOpen}
-        onClose={() => setIsAddBankModalOpen(false)}
-        title="Add Bank Account"
-        subtitle="Create a new workspace"
-        maxWidth="sm"
-      >
-        <form onSubmit={handleCreateBank} className="space-y-3.5 text-left">
-          <Input
-            label="Bank Name"
-            placeholder="e.g. Axis Bank, Kotak Mahindra"
-            value={newBankName}
-            onChange={(e) => setNewBankName(e.target.value)}
-            required
-            autoFocus
-          />
-
-          <Input
-            label="Account Nickname"
-            placeholder="e.g. Salary, Emergency, Investment"
-            value={newNickname}
-            onChange={(e) => setNewNickname(e.target.value)}
-            required
-          />
-
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              onClick={() => setIsAddBankModalOpen(false)}
-              className="rounded-xl px-4 py-2 text-xs font-semibold text-zinc-400 hover:bg-zinc-800 hover:text-white"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="rounded-xl bg-zinc-200 hover:bg-white text-zinc-950 px-4 py-2 text-xs font-semibold"
-            >
-              Create Workspace
             </button>
           </div>
         </form>

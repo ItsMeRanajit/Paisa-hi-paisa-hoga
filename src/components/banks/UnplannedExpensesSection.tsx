@@ -34,14 +34,12 @@ export const UnplannedExpensesSection: React.FC<UnplannedExpensesSectionProps> =
   const [dayInput, setDayInput] = useState(new Date().getDate().toString());
   const [descInput, setDescInput] = useState('');
   const [amountInput, setAmountInput] = useState('');
-  const [notesInput, setNotesInput] = useState('');
 
   // Editing state
   const [editingExpense, setEditingExpense] = useState<UnplannedExpense | null>(null);
   const [editDay, setEditDay] = useState('');
   const [editDesc, setEditDesc] = useState('');
   const [editAmount, setEditAmount] = useState('');
-  const [editNotes, setEditNotes] = useState('');
 
   // Deletion confirm
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -57,13 +55,11 @@ export const UnplannedExpensesSection: React.FC<UnplannedExpensesSectionProps> =
       day: parseInt(dayInput, 10) || 1,
       description: descInput.trim(),
       amount: amt,
-      notes: notesInput.trim(),
     });
 
     addToast(`Added unplanned expense of ₹${amt.toLocaleString()}`, 'success');
     setDescInput('');
     setAmountInput('');
-    setNotesInput('');
     setIsAddModalOpen(false);
   };
 
@@ -72,7 +68,6 @@ export const UnplannedExpensesSection: React.FC<UnplannedExpensesSectionProps> =
     setEditDay(item.day.toString());
     setEditDesc(item.description);
     setEditAmount(item.amount.toString());
-    setEditNotes(item.notes || '');
   };
 
   const handleEditSubmit = (e: React.FormEvent) => {
@@ -83,7 +78,6 @@ export const UnplannedExpensesSection: React.FC<UnplannedExpensesSectionProps> =
       day: parseInt(editDay, 10) || 1,
       description: editDesc.trim(),
       amount: parseFloat(editAmount) || 0,
-      notes: editNotes.trim(),
     });
 
     addToast('Updated unplanned expense', 'success');
@@ -395,13 +389,6 @@ export const UnplannedExpensesSection: React.FC<UnplannedExpensesSectionProps> =
             required
           />
 
-          <Input
-            label="Notes (Optional)"
-            placeholder="e.g. Emergency visit / replacement"
-            value={notesInput}
-            onChange={(e) => setNotesInput(e.target.value)}
-          />
-
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"
@@ -457,12 +444,6 @@ export const UnplannedExpensesSection: React.FC<UnplannedExpensesSectionProps> =
             value={editDesc}
             onChange={(e) => setEditDesc(e.target.value)}
             required
-          />
-
-          <Input
-            label="Notes"
-            value={editNotes}
-            onChange={(e) => setEditNotes(e.target.value)}
           />
 
           <div className="flex justify-end gap-2 pt-2">
