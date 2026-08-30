@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { Edit3, Wallet, Check } from 'lucide-react';
-import { BankAccount, BankCalculations } from '../../types/finance';
-import { useFinanceStore } from '../../store/useFinanceStore';
-import { useUIStore } from '../../store/useUIStore';
-import { formatCurrency } from '../../utils/formatters';
-import { Input } from '../common/Input';
+import React, { useState } from "react";
+import { Edit3, Wallet, Check } from "lucide-react";
+import { BankAccount, BankCalculations } from "../../types/finance";
+import { useFinanceStore } from "../../store/useFinanceStore";
+import { useUIStore } from "../../store/useUIStore";
+import { formatCurrency } from "../../utils/formatters";
+import { Input } from "../common/Input";
 
 interface FundPoolSectionProps {
   bank: BankAccount;
@@ -26,7 +26,7 @@ export const FundPoolSection: React.FC<FundPoolSectionProps> = ({ bank, metrics 
 
     updateMonthlyFundPool(bank.id, activeMonth, income, amountAtBank);
     setIsEditing(false);
-    addToast(`Updated ${bank.bankName} fund pool for ${activeMonth}`, 'success');
+    addToast(`Updated ${bank.bankName} fund pool for ${activeMonth}`, "success");
   };
 
   const handleStartEdit = () => {
@@ -43,9 +43,7 @@ export const FundPoolSection: React.FC<FundPoolSectionProps> = ({ bank, metrics 
             <Wallet className="h-3.5 w-3.5" />
           </div>
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300">
-              Section 1: Monthly Fund Pool
-            </h3>
+            <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-300">Section 1: Monthly Fund Pool</h3>
             <p className="text-[11px] text-zinc-400">Available spending pool for {activeMonth}</p>
           </div>
         </div>
@@ -60,11 +58,7 @@ export const FundPoolSection: React.FC<FundPoolSectionProps> = ({ bank, metrics 
             <span>Edit Pool</span>
           </button>
         ) : (
-          <button
-            type="button"
-            onClick={() => setIsEditing(false)}
-            className="text-xs font-medium text-zinc-400 hover:text-zinc-200"
-          >
+          <button type="button" onClick={() => setIsEditing(false)} className="text-xs font-medium text-zinc-400 hover:text-zinc-200">
             Cancel
           </button>
         )}
@@ -72,25 +66,21 @@ export const FundPoolSection: React.FC<FundPoolSectionProps> = ({ bank, metrics 
 
       {!isEditing ? (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div className="rounded-xl bg-[#0c0e12] p-3.5 border border-[#1c212b]">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Monthly Income</span>
-            <p className="text-lg font-bold font-mono text-zinc-100 mt-0.5">
-              {formatCurrency(metrics.monthlyIncome)}
-            </p>
-          </div>
+          <div className="flex justify-between place-items-center gap-2">
+            <div className="rounded-xl bg-[#0c0e12] p-3.5 border border-[#1c212b] w-full ">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Monthly Income</span>
+              <p className="text-lg font-bold font-mono text-zinc-100 mt-0.5">{formatCurrency(metrics.monthlyIncome)}</p>
+            </div>
 
-          <div className="rounded-xl bg-[#0c0e12] p-3.5 border border-[#1c212b]">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Amount at Bank</span>
-            <p className="text-lg font-bold font-mono text-zinc-100 mt-0.5">
-              {formatCurrency(metrics.amountAtBank)}
-            </p>
+            <div className="rounded-xl bg-[#0c0e12] p-3.5 border border-[#1c212b] w-full">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Amount at Bank</span>
+              <p className="text-lg font-bold font-mono text-zinc-100 mt-0.5">{formatCurrency(metrics.amountAtBank)}</p>
+            </div>
           </div>
 
           <div className="rounded-xl bg-[#0c0e12] p-3.5 border border-[#1c212b]">
             <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Total Spending Pool</span>
-            <p className="text-lg font-bold font-mono text-emerald-400 mt-0.5">
-              {formatCurrency(metrics.totalSpendingPool)}
-            </p>
+            <p className="text-lg font-bold font-mono text-emerald-400 mt-0.5">{formatCurrency(metrics.totalSpendingPool)}</p>
           </div>
         </div>
       ) : (
@@ -123,10 +113,7 @@ export const FundPoolSection: React.FC<FundPoolSectionProps> = ({ bank, metrics 
             <p className="text-xs text-zinc-400">
               Calculated Total Pool: <strong className="text-white font-mono">{formatCurrency((parseFloat(incomeInput) || 0) + (parseFloat(bankAmountInput) || 0))}</strong>
             </p>
-            <button
-              type="submit"
-              className="flex items-center gap-1.5 rounded-xl bg-zinc-200 hover:bg-white text-zinc-950 px-4 py-2 text-xs font-semibold transition-all cursor-pointer"
-            >
+            <button type="submit" className="flex items-center gap-1.5 rounded-xl bg-zinc-200 hover:bg-white text-zinc-950 px-4 py-2 text-xs font-semibold transition-all cursor-pointer">
               <Check className="h-3.5 w-3.5" />
               <span>Save Changes</span>
             </button>
