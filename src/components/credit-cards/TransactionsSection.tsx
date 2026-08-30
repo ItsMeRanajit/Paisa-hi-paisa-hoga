@@ -150,7 +150,7 @@ export const TransactionsSection: React.FC<TransactionsSectionProps> = ({
                 <p className="text-[11px] text-zinc-400">Category: {tx.category}</p>
               </div>
 
-              <div className="flex items-center gap-2.5 shrink-0">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5 shrink-0">
                 <span className="text-xs sm:text-sm font-bold font-mono text-zinc-200">
                   {formatCurrency(tx.amount, currency)}
                 </span>

@@ -219,7 +219,7 @@ export const PlannedExpensesSection: React.FC<PlannedExpensesSectionProps> = ({ 
                 </div>
 
                 {/* In-row action controls */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
                   {/* Dedicated + Add Spend Button */}
                   <button
                     type="button"

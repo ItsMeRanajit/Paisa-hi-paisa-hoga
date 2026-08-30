@@ -71,11 +71,7 @@ export const BankWorkspace: React.FC = () => {
       bankName: newBankName,
       nickname: newNickname || 'Primary Account',
       color: '#71717a',
-      plannedCategories: [
-        { id: `cat-rent-${Date.now()}`, category: 'Rent / Mortgage', amountSet: 25000 },
-        { id: `cat-grocery-${Date.now()}`, category: 'Groceries', amountSet: 10000 },
-        { id: `cat-utilities-${Date.now()}`, category: 'Utilities', amountSet: 4000 },
-      ],
+      plannedCategories: [],
     });
 
     setSelectedBankId(newId);
@@ -147,13 +143,59 @@ export const BankWorkspace: React.FC = () => {
 
   if (banks.length === 0 || !currentBank) {
     return (
-      <EmptyState
-        icon={Landmark}
-        title="No Bank Accounts Configured"
-        description="Add your first bank account to begin tracking fund pools, planned budgets, optional commitments, and unplanned spending."
-        actionLabel="Create Bank Account"
-        onAction={() => setIsAddBankModalOpen(true)}
-      />
+      <>
+        <EmptyState
+          icon={Landmark}
+          title="No Bank Accounts Configured"
+          description="Add your first bank account to begin tracking fund pools, planned budgets, optional commitments, and unplanned spending."
+          actionLabel="Create Bank Account"
+          onAction={() => setIsAddBankModalOpen(true)}
+        />
+
+        {/* Add Bank Modal */}
+        <Modal
+          isOpen={isAddBankModalOpen}
+          onClose={() => setIsAddBankModalOpen(false)}
+          title="Add Bank Account"
+          subtitle="Create a new workspace"
+          maxWidth="sm"
+        >
+          <form onSubmit={handleCreateBank} className="space-y-3.5 text-left">
+            <Input
+              label="Bank Name"
+              placeholder="e.g. Axis Bank, Kotak Mahindra"
+              value={newBankName}
+              onChange={(e) => setNewBankName(e.target.value)}
+              required
+              autoFocus
+            />
+
+            <Input
+              label="Account Nickname"
+              placeholder="e.g. Salary, Emergency, Investment"
+              value={newNickname}
+              onChange={(e) => setNewNickname(e.target.value)}
+              required
+            />
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsAddBankModalOpen(false)}
+                className="rounded-xl px-4 py-2 text-xs font-semibold text-zinc-400 hover:bg-zinc-800 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="rounded-xl bg-zinc-200 hover:bg-white text-zinc-950 px-4 py-2 text-xs font-semibold"
+              >
+                Create Workspace
+              </button>
+            </div>
+          </form>
+        </Modal>
+      </>
     );
   }
 

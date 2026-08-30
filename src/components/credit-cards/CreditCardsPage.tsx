@@ -68,13 +68,99 @@ export const CreditCardsPage: React.FC = () => {
 
   if (creditCards.length === 0 || !currentCard) {
     return (
-      <EmptyState
-        icon={CardIcon}
-        title="No Credit Cards Added"
-        description="Add your credit cards to monitor spending, track utilization against the 30% safe threshold, and classify essential vs non-essential purchases."
-        actionLabel="Add Credit Card"
-        onAction={() => setIsAddCardModalOpen(true)}
-      />
+      <>
+        <EmptyState
+          icon={CardIcon}
+          title="No Credit Cards Added"
+          description="Add your credit cards to monitor spending, track utilization against the 30% safe threshold, and classify essential vs non-essential purchases."
+          actionLabel="Add Credit Card"
+          onAction={() => setIsAddCardModalOpen(true)}
+        />
+
+        {/* Add Card Modal */}
+        <Modal
+          isOpen={isAddCardModalOpen}
+          onClose={() => setIsAddCardModalOpen(false)}
+          title="Add Credit Card"
+          subtitle="Track outstanding, limits, and utilization"
+          maxWidth="sm"
+        >
+          <form onSubmit={handleCreateCard} className="space-y-3.5 text-left">
+            <Input
+              label="Card Name"
+              placeholder="e.g. HDFC Regalia, Axis Magnus"
+              value={newCardName}
+              onChange={(e) => setNewCardName(e.target.value)}
+              required
+              autoFocus
+            />
+
+            <Input
+              label="Issuer"
+              placeholder="e.g. HDFC Bank, SBI Card"
+              value={newIssuer}
+              onChange={(e) => setNewIssuer(e.target.value)}
+              required
+            />
+
+            <Input
+              label="Nickname / Purpose"
+              placeholder="e.g. Travel & Lounges"
+              value={newNickname}
+              onChange={(e) => setNewNickname(e.target.value)}
+            />
+
+            <Input
+              label="Credit Limit"
+              type="number"
+              prefixSymbol="₹"
+              placeholder="e.g. 300000"
+              value={newLimit}
+              onChange={(e) => setNewLimit(e.target.value)}
+              required
+            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="Billing Cycle Start"
+                type="number"
+                min={1}
+                max={31}
+                value={newCycleStart}
+                onChange={(e) => setNewCycleStart(e.target.value)}
+                helperText="e.g. 15th"
+                required
+              />
+              <Input
+                label="Billing Cycle End"
+                type="number"
+                min={1}
+                max={31}
+                value={newCycleEnd}
+                onChange={(e) => setNewCycleEnd(e.target.value)}
+                helperText="e.g. 14th"
+                required
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsAddCardModalOpen(false)}
+                className="rounded-xl px-4 py-2 text-xs font-semibold text-zinc-400 hover:bg-zinc-800 hover:text-white"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="rounded-xl bg-zinc-200 hover:bg-white text-zinc-950 px-4 py-2 text-xs font-semibold"
+              >
+                Save Card
+              </button>
+            </div>
+          </form>
+        </Modal>
+      </>
     );
   }
 

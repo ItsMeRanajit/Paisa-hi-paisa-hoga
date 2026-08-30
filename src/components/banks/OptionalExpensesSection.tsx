@@ -225,7 +225,7 @@ export const OptionalExpensesSection: React.FC<OptionalExpensesSectionProps> = (
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => handleTogglePaid(item)}

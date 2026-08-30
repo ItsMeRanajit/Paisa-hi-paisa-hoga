@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -47,7 +48,7 @@ export const Modal: React.FC<ModalProps> = ({
     '2xl': 'sm:max-w-2xl',
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       {/* Backdrop */}
       <div
@@ -68,6 +69,7 @@ export const Modal: React.FC<ModalProps> = ({
             : 'rounded-2xl animate-fade-in',
           maxWidthMap[maxWidth]
         )}
+        style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
       >
         {/* Mobile handle indicator */}
         {isBottomSheetOnMobile && (
@@ -97,6 +99,7 @@ export const Modal: React.FC<ModalProps> = ({
         {/* Body content with scroll */}
         <div className="flex-1 overflow-y-auto p-5 space-y-4">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

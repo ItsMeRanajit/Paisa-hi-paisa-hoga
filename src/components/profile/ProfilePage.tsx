@@ -84,11 +84,7 @@ export const ProfilePage: React.FC = () => {
       nickname: bankNickname || 'Savings',
       accountNumberMasked: accountNumber ? `••• ${accountNumber.slice(-4)}` : undefined,
       color: '#71717a',
-      plannedCategories: [
-        { id: `cat-rent-${Date.now()}`, category: 'Rent', amountSet: 20000 },
-        { id: `cat-groceries-${Date.now()}`, category: 'Groceries', amountSet: 8000 },
-        { id: `cat-bills-${Date.now()}`, category: 'Electricity & Bills', amountSet: 3500 },
-      ],
+      plannedCategories: [],
     });
 
     addToast(`Added bank workspace: ${bankName}`, 'success');
@@ -267,8 +263,7 @@ export const ProfilePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setDeletingBankId(bank.id)}
-                disabled={banks.length <= 1}
-                className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-950/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                className="p-1.5 rounded-lg text-zinc-500 hover:text-rose-400 hover:bg-rose-950/30 transition-colors cursor-pointer"
                 title="Delete bank"
               >
                 <Trash2 className="h-3.5 w-3.5" />

@@ -4,14 +4,14 @@ import {
   calculateGoalMetrics,
   calculateAllBanksAggregate,
   generateFinancialAlerts,
-} from './src/utils/calculations.js';
+} from './src/utils/calculations.ts';
 import {
   formatCurrency,
   formatPercentage,
   formatMonthDisplay,
   formatDayWithMonth,
   getOffsetMonth,
-} from './src/utils/formatters.js';
+} from './src/utils/formatters.ts';
 
 let passed = 0;
 let failed = 0;

@@ -94,7 +94,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
         </div>
 
         {/* Action buttons */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 shrink-0">
           <button
             type="button"
             onClick={handleToggleSuccess}
