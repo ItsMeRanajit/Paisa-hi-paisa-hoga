@@ -48,10 +48,10 @@ export const Header: React.FC = () => {
       style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex h-15 items-center justify-between gap-4">
+        <div className="flex h-14 items-center justify-between gap-3">
           {/* Minimalist Logo & App Title */}
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-zinc-800 text-zinc-200 border border-zinc-700/60">
+          <div className="flex items-center gap-2.5 shrink-0">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-zinc-800 text-zinc-200 border border-zinc-700/60 shadow-xs">
               <Wallet className="h-4 w-4" />
             </div>
             <div className="hidden sm:block text-left">
@@ -62,18 +62,18 @@ export const Header: React.FC = () => {
           </div>
 
           {/* Center Navigation & Month Stepper */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center justify-center gap-2.5">
             <DesktopNav />
             <MonthSelector />
           </div>
 
           {/* Right Action buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2 shrink-0">
             <button
               type="button"
               onClick={handleExport}
               title="Download Monthly Excel Report"
-              className="hidden md:flex items-center gap-1.5 rounded-xl bg-[#13161c] border border-[#222731] px-3 py-1.5 text-xs font-medium text-zinc-300 hover:bg-[#1a1f27] hover:text-white transition-all cursor-pointer"
+              className="hidden md:flex h-8 items-center gap-1.5 rounded-xl bg-[#13161c] border border-[#222731] px-3 text-xs font-medium text-zinc-300 hover:bg-[#1a1f27] hover:text-white transition-all cursor-pointer"
             >
               <Download className="h-3.5 w-3.5 text-zinc-400" />
               <span>Export</span>
@@ -82,7 +82,7 @@ export const Header: React.FC = () => {
             <button
               type="button"
               onClick={() => openQuickAdd('unplanned')}
-              className="flex items-center gap-1.5 rounded-xl bg-zinc-200 hover:bg-white text-zinc-950 px-3.5 py-1.5 text-xs font-semibold transition-all cursor-pointer shadow-xs"
+              className="flex h-8 items-center gap-1.5 rounded-xl bg-zinc-200 hover:bg-white text-zinc-950 px-3 sm:px-3.5 text-xs font-semibold transition-all cursor-pointer shadow-xs"
             >
               <Plus className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Add Expense</span>

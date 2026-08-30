@@ -11,6 +11,9 @@ import {
   UnplannedExpense,
   NavigationTab,
   PlannedExpenseMaster,
+  ExpensePaymentType,
+  RecurringSpendEntry,
+  PortionSpendEntry,
   GoalAllocation,
   GoalAllocationInput,
 } from '../types/finance';
@@ -58,12 +61,16 @@ interface FinanceState {
   updateMonthlyFundPool: (bankId: string, month: string, monthlyIncome: number, amountAtBank: number) => void;
 
   // Planned Expenses
-  addPlannedCategoryToBank: (bankId: string, category: string, defaultAmount: number) => void;
+  addPlannedCategoryToBank: (bankId: string, category: string, defaultAmount: number, paymentType?: ExpensePaymentType) => string;
   updatePlannedCategoryInBank: (bankId: string, categoryId: string, updates: Partial<PlannedExpenseMaster>) => void;
   deletePlannedCategoryFromBank: (bankId: string, categoryId: string) => void;
   reorderPlannedCategories: (bankId: string, categoryIds: string[]) => void;
   updatePlannedSpent: (bankId: string, month: string, masterId: string, amountSpent: number, amountSetOverride?: number) => void;
   addPlannedSpend: (bankId: string, month: string, masterId: string, amountToAdd: number) => void;
+  addRecurringPlannedSpend: (bankId: string, month: string, masterId: string, entry: { date: string; description: string; amount: number }) => void;
+  deleteRecurringPlannedSpend: (bankId: string, month: string, masterId: string, entryId: string) => void;
+  addPortionPlannedSpend: (bankId: string, month: string, masterId: string, portion: { date: string; amount: number; label?: string }) => void;
+  deletePortionPlannedSpend: (bankId: string, month: string, masterId: string, portionId: string) => void;
 
   // Optional Expenses (Month-Specific One-off Must-Spend Commitments)
   addOptionalExpense: (expense: Omit<OptionalExpense, 'id' | 'createdAt'>) => string;
@@ -186,23 +193,25 @@ export const useFinanceStore = create<FinanceState>()(
           };
         }),
 
-      addPlannedCategoryToBank: (bankId, category, defaultAmount) =>
-        set((state) => {
-          const newCatId = `cat-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
-          const newCat: PlannedExpenseMaster = {
-            id: newCatId,
-            category,
-            amountSet: Number(defaultAmount) || 0,
-          };
+      addPlannedCategoryToBank: (bankId, category, defaultAmount, paymentType = 'recurring') => {
+        const newCatId = `cat-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
+        const newCat: PlannedExpenseMaster = {
+          id: newCatId,
+          category,
+          amountSet: Number(defaultAmount) || 0,
+          paymentType,
+        };
 
-          return {
-            banks: state.banks.map((b) =>
-              b.id === bankId
-                ? { ...b, plannedCategories: [...(b.plannedCategories || []), newCat] }
-                : b
-            ),
-          };
-        }),
+        set((state) => ({
+          banks: state.banks.map((b) =>
+            b.id === bankId
+              ? { ...b, plannedCategories: [...(b.plannedCategories || []), newCat] }
+              : b
+          ),
+        }));
+
+        return newCatId;
+      },
 
       updatePlannedCategoryInBank: (bankId, categoryId, updates) =>
         set((state) => ({
@@ -303,6 +312,170 @@ export const useFinanceStore = create<FinanceState>()(
                 [bankId]: {
                   ...currentBankMonth,
                   plannedExpenseValues: updatedValues,
+                },
+              },
+            },
+          };
+        }),
+
+      addRecurringPlannedSpend: (bankId, month, masterId, entry) =>
+        set((state) => {
+          const monthRecords = state.monthlyData[month] || {};
+          const currentBankMonth = monthRecords[bankId] || {
+            bankId,
+            month,
+            monthlyIncome: 0,
+            amountAtBank: 0,
+            plannedExpenseValues: {},
+            unplannedExpenseIds: [],
+          };
+
+          const existingVal = currentBankMonth.plannedExpenseValues[masterId] || { amountSpent: 0 };
+          const existingEntries = existingVal.recurringEntries || [];
+          const newEntry: RecurringSpendEntry = {
+            id: `rec-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+            date: entry.date,
+            description: entry.description,
+            amount: Number(entry.amount) || 0,
+            createdAt: new Date().toISOString(),
+          };
+
+          const updatedEntries = [...existingEntries, newEntry];
+          const newSpent = updatedEntries.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+          const updatedValues = {
+            ...currentBankMonth.plannedExpenseValues,
+            [masterId]: {
+              ...existingVal,
+              recurringEntries: updatedEntries,
+              amountSpent: newSpent,
+            },
+          };
+
+          return {
+            monthlyData: {
+              ...state.monthlyData,
+              [month]: {
+                ...monthRecords,
+                [bankId]: {
+                  ...currentBankMonth,
+                  plannedExpenseValues: updatedValues,
+                },
+              },
+            },
+          };
+        }),
+
+      deleteRecurringPlannedSpend: (bankId, month, masterId, entryId) =>
+        set((state) => {
+          const monthRecords = state.monthlyData[month] || {};
+          const currentBankMonth = monthRecords[bankId];
+          if (!currentBankMonth) return state;
+
+          const existingVal = currentBankMonth.plannedExpenseValues[masterId];
+          if (!existingVal || !existingVal.recurringEntries) return state;
+
+          const updatedEntries = existingVal.recurringEntries.filter((e) => e.id !== entryId);
+          const newSpent = updatedEntries.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+          return {
+            monthlyData: {
+              ...state.monthlyData,
+              [month]: {
+                ...monthRecords,
+                [bankId]: {
+                  ...currentBankMonth,
+                  plannedExpenseValues: {
+                    ...currentBankMonth.plannedExpenseValues,
+                    [masterId]: {
+                      ...existingVal,
+                      recurringEntries: updatedEntries,
+                      amountSpent: newSpent,
+                    },
+                  },
+                },
+              },
+            },
+          };
+        }),
+
+      addPortionPlannedSpend: (bankId, month, masterId, portion) =>
+        set((state) => {
+          const monthRecords = state.monthlyData[month] || {};
+          const currentBankMonth = monthRecords[bankId] || {
+            bankId,
+            month,
+            monthlyIncome: 0,
+            amountAtBank: 0,
+            plannedExpenseValues: {},
+            unplannedExpenseIds: [],
+          };
+
+          const existingVal = currentBankMonth.plannedExpenseValues[masterId] || { amountSpent: 0 };
+          const existingPortions = existingVal.portionEntries || [];
+          const nextPortionNum = existingPortions.length + 1;
+          const newPortion: PortionSpendEntry = {
+            id: `portion-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+            portionNumber: nextPortionNum,
+            date: portion.date,
+            amount: Number(portion.amount) || 0,
+            label: portion.label || `Portion ${nextPortionNum}`,
+            createdAt: new Date().toISOString(),
+          };
+
+          const updatedPortions = [...existingPortions, newPortion];
+          const newSpent = updatedPortions.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+          const updatedValues = {
+            ...currentBankMonth.plannedExpenseValues,
+            [masterId]: {
+              ...existingVal,
+              portionEntries: updatedPortions,
+              amountSpent: newSpent,
+            },
+          };
+
+          return {
+            monthlyData: {
+              ...state.monthlyData,
+              [month]: {
+                ...monthRecords,
+                [bankId]: {
+                  ...currentBankMonth,
+                  plannedExpenseValues: updatedValues,
+                },
+              },
+            },
+          };
+        }),
+
+      deletePortionPlannedSpend: (bankId, month, masterId, portionId) =>
+        set((state) => {
+          const monthRecords = state.monthlyData[month] || {};
+          const currentBankMonth = monthRecords[bankId];
+          if (!currentBankMonth) return state;
+
+          const existingVal = currentBankMonth.plannedExpenseValues[masterId];
+          if (!existingVal || !existingVal.portionEntries) return state;
+
+          const updatedPortions = existingVal.portionEntries.filter((p) => p.id !== portionId);
+          const newSpent = updatedPortions.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+
+          return {
+            monthlyData: {
+              ...state.monthlyData,
+              [month]: {
+                ...monthRecords,
+                [bankId]: {
+                  ...currentBankMonth,
+                  plannedExpenseValues: {
+                    ...currentBankMonth.plannedExpenseValues,
+                    [masterId]: {
+                      ...existingVal,
+                      portionEntries: updatedPortions,
+                      amountSpent: newSpent,
+                    },
+                  },
                 },
               },
             },

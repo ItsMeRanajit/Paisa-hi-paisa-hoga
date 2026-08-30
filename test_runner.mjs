@@ -170,5 +170,89 @@ assert(zeroMetrics.optionalTotalSpent === 0, 'Zero spent simulation has 0 option
 assert(zeroMetrics.finalMonthlyRemaining === 180000, 'Zero spent simulation leaves full 180,000 remaining');
 assert(zeroMetrics.plannedTotalSet === 90000, 'Zero spent simulation preserves full planned category budget');
 
+// Test 7: Recurring Expense Types with Micro-Payments Tracking
+const recurringBank = {
+  id: 'bank-rec-01',
+  bankName: 'ICICI Bank',
+  nickname: 'Daily Expenses',
+  color: '#8b5cf6',
+  plannedCategories: [
+    { id: 'cat-food', category: 'Food & Dining', amountSet: 15000, paymentType: 'recurring' },
+    { id: 'cat-travel', category: 'Travel & Commute', amountSet: 8000, paymentType: 'recurring' },
+  ],
+};
+
+const recurringMonthData = {
+  bankId: 'bank-rec-01',
+  month: '2026-08',
+  monthlyIncome: 60000,
+  amountAtBank: 10000,
+  plannedExpenseValues: {
+    'cat-food': {
+      amountSpent: 0,
+      paymentType: 'recurring',
+      recurringEntries: [
+        { id: 'r1', date: '2026-08-02', description: 'Swiggy order', amount: 450 },
+        { id: 'r2', date: '2026-08-05', description: 'Grocery store', amount: 1200 },
+        { id: 'r3', date: '2026-08-11', description: 'Cafe lunch', amount: 650 },
+      ],
+    },
+    'cat-travel': {
+      amountSpent: 0,
+      paymentType: 'recurring',
+      recurringEntries: [
+        { id: 'r4', date: '2026-08-03', description: 'Uber to office', amount: 320 },
+        { id: 'r5', date: '2026-08-08', description: 'Fuel petrol pump', amount: 2000 },
+      ],
+    },
+  },
+  unplannedExpenseIds: [],
+};
+
+const recMetrics = calculateBankMetrics(recurringBank, recurringMonthData, [], [], 5000);
+// Food total spent = 450 + 1200 + 650 = 2300
+assert(recMetrics.plannedRows[0].amountSpent === 2300, `Recurring Food spent is calculated dynamically as 2,300 (got ${recMetrics.plannedRows[0].amountSpent})`);
+assert(recMetrics.plannedRows[0].remaining === 12700, `Recurring Food remaining is 12,700 (got ${recMetrics.plannedRows[0].remaining})`);
+// Travel total spent = 320 + 2000 = 2320
+assert(recMetrics.plannedRows[1].amountSpent === 2320, `Recurring Travel spent is calculated dynamically as 2,320 (got ${recMetrics.plannedRows[1].amountSpent})`);
+// Total planned spent = 2300 + 2320 = 4620
+assert(recMetrics.plannedTotalSpent === 4620, `Total planned spent across recurring categories is 4,620 (got ${recMetrics.plannedTotalSpent})`);
+
+// Test 8: In Portions Expense Type (Installments)
+const portionBank = {
+  id: 'bank-portion-01',
+  bankName: 'SBI Bank',
+  nickname: 'Large Commitments',
+  color: '#10b981',
+  plannedCategories: [
+    { id: 'cat-fees', category: 'College Fees', amountSet: 30000, paymentType: 'in_portions' },
+  ],
+};
+
+const portionMonthData = {
+  bankId: 'bank-portion-01',
+  month: '2026-08',
+  monthlyIncome: 100000,
+  amountAtBank: 20000,
+  plannedExpenseValues: {
+    'cat-fees': {
+      amountSpent: 0,
+      paymentType: 'in_portions',
+      portionEntries: [
+        { id: 'p1', portionNumber: 1, date: '2026-08-01', amount: 10000, label: 'First Portion' },
+        { id: 'p2', portionNumber: 2, date: '2026-08-15', amount: 10000, label: 'Second Portion' },
+        { id: 'p3', portionNumber: 3, date: '2026-08-28', amount: 10000, label: 'Final Portion' },
+      ],
+    },
+  },
+  unplannedExpenseIds: [],
+};
+
+const portionMetrics = calculateBankMetrics(portionBank, portionMonthData, [], [], 10000);
+// Fees total spent = 10000 + 10000 + 10000 = 30000
+assert(portionMetrics.plannedRows[0].amountSpent === 30000, `In Portions College Fees spent is 30,000 (got ${portionMetrics.plannedRows[0].amountSpent})`);
+assert(portionMetrics.plannedRows[0].remaining === 0, `In Portions College Fees remaining is 0 (got ${portionMetrics.plannedRows[0].remaining})`);
+assert(portionMetrics.plannedRows[0].utilizationPercent === 100, `In Portions College Fees is 100% utilized`);
+
 console.log(`\nTEST RESULTS: ${passed} passed, ${failed} failed.`);
 if (failed > 0) process.exit(1);

@@ -17,10 +17,30 @@ export interface BankAccount {
   createdAt: string;
 }
 
+export type ExpensePaymentType = 'one_time' | 'recurring' | 'in_portions';
+
+export interface RecurringSpendEntry {
+  id: string;
+  date: string; // e.g. "2026-08-14" or "14 Aug 2026"
+  description: string;
+  amount: number;
+  createdAt?: string;
+}
+
+export interface PortionSpendEntry {
+  id: string;
+  portionNumber: number; // 1, 2, 3...
+  date: string; // e.g. "2026-08-14"
+  amount: number;
+  label?: string; // e.g. "Initial Down Payment", "2nd Installment"
+  createdAt?: string;
+}
+
 export interface PlannedExpenseMaster {
   id: string;
   category: string;
   amountSet: number; // default budget amount
+  paymentType?: ExpensePaymentType; // 'one_time' | 'recurring' | 'in_portions' (default 'recurring')
 }
 
 export interface PlannedExpenseMonthValue {
@@ -28,6 +48,9 @@ export interface PlannedExpenseMonthValue {
   category: string; // snapshot/override
   amountSet: number; // override if changed for specific month
   amountSpent: number;
+  paymentType?: ExpensePaymentType;
+  recurringEntries?: RecurringSpendEntry[];
+  portionEntries?: PortionSpendEntry[];
 }
 
 export interface OptionalExpense {
@@ -60,7 +83,16 @@ export interface BankMonthlyData {
   month: string; // 'YYYY-MM'
   monthlyIncome: number;
   amountAtBank: number;
-  plannedExpenseValues: Record<string, { amountSet?: number; amountSpent: number }>; // keyed by masterId
+  plannedExpenseValues: Record<
+    string,
+    {
+      amountSet?: number;
+      amountSpent: number;
+      paymentType?: ExpensePaymentType;
+      recurringEntries?: RecurringSpendEntry[];
+      portionEntries?: PortionSpendEntry[];
+    }
+  >; // keyed by masterId
   unplannedExpenseIds: string[];
 }
 
@@ -177,6 +209,9 @@ export interface BankCalculations {
     category: string;
     amountSet: number;
     amountSpent: number;
+    paymentType: ExpensePaymentType;
+    recurringEntries: RecurringSpendEntry[];
+    portionEntries: PortionSpendEntry[];
     remaining: number;
     utilizationPercent: number;
     isOverBudget: boolean;

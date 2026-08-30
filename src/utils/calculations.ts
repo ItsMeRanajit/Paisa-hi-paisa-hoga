@@ -41,7 +41,17 @@ export const calculateBankMetrics = (
   const plannedRows = (bank.plannedCategories || []).map((cat) => {
     const monthOverride = monthData?.plannedExpenseValues?.[cat.id];
     const amountSet = monthOverride?.amountSet !== undefined ? Number(monthOverride.amountSet) : Number(cat.amountSet) || 0;
-    const amountSpent = Number(monthOverride?.amountSpent) || 0;
+    const paymentType = monthOverride?.paymentType || cat.paymentType || 'recurring';
+    const recurringEntries = monthOverride?.recurringEntries || [];
+    const portionEntries = monthOverride?.portionEntries || [];
+
+    let amountSpent = Number(monthOverride?.amountSpent) || 0;
+    if (paymentType === 'recurring' && recurringEntries.length > 0) {
+      amountSpent = recurringEntries.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    } else if (paymentType === 'in_portions' && portionEntries.length > 0) {
+      amountSpent = portionEntries.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+    }
+
     const remaining = amountSet - amountSpent;
     const utilizationPercent = amountSet > 0 ? (amountSpent / amountSet) * 100 : 0;
     const isOverBudget = amountSpent > amountSet;
@@ -54,6 +64,9 @@ export const calculateBankMetrics = (
       category: cat.category,
       amountSet,
       amountSpent,
+      paymentType,
+      recurringEntries,
+      portionEntries,
       remaining,
       utilizationPercent,
       isOverBudget,

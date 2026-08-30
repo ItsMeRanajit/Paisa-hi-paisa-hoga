@@ -6,12 +6,14 @@ export interface ToastNotification {
   message: string;
 }
 
+export type QuickAddType = 'planned' | 'optional' | 'unplanned' | 'credit_tx' | 'goal_saving';
+
 interface UIState {
   isQuickAddOpen: boolean;
-  quickAddType: 'unplanned' | 'credit_tx' | 'goal_saving' | null;
+  quickAddType: QuickAddType | null;
   toasts: ToastNotification[];
 
-  openQuickAdd: (type?: 'unplanned' | 'credit_tx' | 'goal_saving') => void;
+  openQuickAdd: (type?: QuickAddType) => void;
   closeQuickAdd: () => void;
   addToast: (message: string, type?: 'success' | 'warning' | 'danger' | 'info') => void;
   removeToast: (id: string) => void;

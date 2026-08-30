@@ -10,6 +10,7 @@ interface StatCardProps {
   badgeText?: string;
   badgeVariant?: 'success' | 'warning' | 'danger' | 'info' | 'neutral';
   colorTheme?: 'indigo' | 'emerald' | 'amber' | 'rose' | 'blue' | 'purple' | 'slate' | 'zinc';
+  compact?: boolean;
   className?: string;
   onClick?: () => void;
 }
@@ -21,6 +22,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   icon: Icon,
   badgeText,
   badgeVariant = 'neutral',
+  compact = false,
   className,
   onClick,
 }) => {
@@ -36,30 +38,31 @@ export const StatCard: React.FC<StatCardProps> = ({
     <div
       onClick={onClick}
       className={clsx(
-        'rounded-2xl border border-[#222731] bg-[#13161c] p-4 sm:p-5 transition-all text-left',
+        'rounded-xl border border-[#222731] bg-[#13161c] transition-all text-left',
+        compact ? 'p-2.5 sm:p-3' : 'p-3 sm:p-3.5',
         onClick && 'hover:border-[#2f3645] hover:bg-[#161a22] cursor-pointer',
         className
       )}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1 min-w-0">
-          <p className="text-[11px] font-semibold tracking-wider text-zinc-400 uppercase">{title}</p>
-          <p className="text-xl sm:text-2xl font-bold tracking-tight text-white font-mono truncate">{value}</p>
+      <div className="flex items-start justify-between gap-1.5">
+        <div className="space-y-0.5 min-w-0">
+          <p className="text-[9px] sm:text-[10px] font-semibold tracking-wider text-zinc-400 uppercase truncate">{title}</p>
+          <p className={clsx('font-bold tracking-tight text-white font-mono truncate', compact ? 'text-sm sm:text-base' : 'text-base sm:text-lg')}>{value}</p>
         </div>
         {Icon && (
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-zinc-800/60 text-zinc-300 border border-zinc-700/40">
-            <Icon className="h-4 w-4" />
+          <div className={clsx('shrink-0 flex items-center justify-center rounded-lg bg-zinc-800/60 text-zinc-300 border border-zinc-700/40', compact ? 'h-6 w-6' : 'h-7 w-7')}>
+            <Icon className={compact ? 'h-3 w-3' : 'h-3.5 w-3.5'} />
           </div>
         )}
       </div>
 
       {(subtitle || badgeText) && (
-        <div className="mt-3 flex items-center justify-between gap-2 border-t border-[#1e232c] pt-2.5 text-xs text-zinc-400">
+        <div className="mt-1.5 flex items-center justify-between gap-1.5 border-t border-[#1e232c] pt-1 text-[10px] sm:text-[11px] text-zinc-400">
           <span className="truncate">{subtitle}</span>
           {badgeText && (
             <span
               className={clsx(
-                'inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium',
+                'inline-flex items-center rounded-full border px-1.5 py-0.2 text-[9px] font-medium',
                 badgeStyles[badgeVariant]
               )}
             >
