@@ -236,7 +236,7 @@ export const OptionalExpensesSection: React.FC<OptionalExpensesSectionProps> = (
               No month-specific commitments logged for {bank.bankName} in {activeMonth}.
             </div>
           ) : (
-            <div className="space-y-2.5">
+            <div className="max-h-[380px] overflow-y-auto pr-1 sm:pr-1.5 space-y-2.5 overscroll-contain">
               {optionalExpenses.map((item) => {
                 const isOverBudget = item.amountSpent > item.amountSet;
                 const utilization = item.amountSet > 0 ? (item.amountSpent / item.amountSet) * 100 : 0;
@@ -247,18 +247,18 @@ export const OptionalExpensesSection: React.FC<OptionalExpensesSectionProps> = (
                     key={item.id}
                     className="rounded-xl border border-[#1c212b] bg-[#0c0e12]/60 p-3.5 hover:border-zinc-700/60 transition-all text-left space-y-2"
                   >
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                    <div className="flex items-center justify-between gap-2">
                       <div className="space-y-0.5 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-xs font-bold text-white truncate">{item.title}</span>
                           {item.dueDate && (
-                            <span className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-400 bg-zinc-800/60 px-1.5 py-0.5 rounded">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-mono text-zinc-400 bg-zinc-800/60 px-1.5 py-0.5 rounded shrink-0">
                               <Calendar className="h-2.5 w-2.5" />
                               Due: {item.dueDate}
                             </span>
                           )}
                           <span
-                            className={`text-[10px] font-medium px-2 py-0.2 rounded-full border ${
+                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full border shrink-0 ${
                               isSettled
                                 ? 'bg-emerald-950/40 text-emerald-300 border-emerald-800/40'
                                 : 'bg-amber-950/40 text-amber-300 border-amber-800/40'
@@ -272,14 +272,14 @@ export const OptionalExpensesSection: React.FC<OptionalExpensesSectionProps> = (
                         )}
                       </div>
 
-                      <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 shrink-0">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <button
                           type="button"
                           onClick={() => handleTogglePaid(item)}
                           className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                             isSettled
                               ? 'bg-emerald-950/60 text-emerald-300 border-emerald-800/50'
-                              : 'bg-zinc-800 text-zinc-300 border-zinc-700 hover:bg-zinc-700'
+                              : 'bg-zinc-800 text-zinc-300 border-zinc-700/60 hover:bg-zinc-700 hover:text-white'
                           }`}
                         >
                           <CheckCircle2 className="h-3 w-3" />
@@ -289,19 +289,21 @@ export const OptionalExpensesSection: React.FC<OptionalExpensesSectionProps> = (
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(item)}
-                          className="p-1.5 rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors cursor-pointer"
-                          title="Edit"
+                          className="h-7 w-7 rounded-lg flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors cursor-pointer border border-zinc-700/60"
+                          title="Edit Commitment"
+                          aria-label="Edit Commitment"
                         >
-                          <Edit2 className="h-3 w-3" />
+                          <Edit2 className="h-3.5 w-3.5" />
                         </button>
 
                         <button
                           type="button"
                           onClick={() => setDeletingId(item.id)}
-                          className="p-1.5 rounded-lg text-zinc-400 hover:bg-rose-950/40 hover:text-rose-400 transition-colors cursor-pointer"
-                          title="Delete"
+                          className="h-7 w-7 rounded-lg flex items-center justify-center bg-zinc-800/80 hover:bg-rose-950/50 text-zinc-400 hover:text-rose-400 transition-colors cursor-pointer border border-zinc-700/60 hover:border-rose-800/60"
+                          title="Delete Commitment"
+                          aria-label="Delete Commitment"
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </div>

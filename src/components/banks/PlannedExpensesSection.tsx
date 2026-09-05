@@ -257,7 +257,7 @@ export const PlannedExpensesSection: React.FC<PlannedExpensesSectionProps> = ({ 
           No planned categories configured for {bank.bankName} yet. Click &quot;Add Category&quot; to begin.
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="max-h-[420px] overflow-y-auto pr-1 sm:pr-1.5 space-y-3 overscroll-contain">
           {metrics.plannedRows.map((row) => {
             const badge = typeBadges[row.paymentType || 'recurring'];
             const BadgeIcon = badge.icon;
@@ -269,17 +269,17 @@ export const PlannedExpensesSection: React.FC<PlannedExpensesSectionProps> = ({ 
                 key={row.masterId}
                 className="rounded-xl border border-[#1c212b] bg-[#0c0e12]/60 p-3.5 hover:border-zinc-700/60 transition-all text-left space-y-2.5"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-bold text-white">{row.category}</span>
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.2 text-[10px] font-medium border ${badge.style}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2 min-w-0">
+                    <span className="text-xs font-bold text-white truncate">{row.category}</span>
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium border shrink-0 ${badge.style}`}>
                       <BadgeIcon className="h-2.5 w-2.5" />
                       {badge.label}
                     </span>
                   </div>
 
                   {/* Actions according to Payment Type */}
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0">
                     {/* Recurring Type Actions */}
                     {row.paymentType === 'recurring' && (
                       <>
@@ -290,7 +290,7 @@ export const PlannedExpensesSection: React.FC<PlannedExpensesSectionProps> = ({ 
                             setRecurringDesc('');
                             setRecurringAmount('');
                           }}
-                          className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-indigo-300 hover:text-white transition-colors cursor-pointer border border-zinc-700/60"
+                          className="h-7 w-7 rounded-lg flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-indigo-300 hover:text-white transition-colors cursor-pointer border border-zinc-700/60"
                           title="Add Spend"
                           aria-label="Add Spend"
                         >
@@ -299,7 +299,7 @@ export const PlannedExpensesSection: React.FC<PlannedExpensesSectionProps> = ({ 
                         <button
                           type="button"
                           onClick={() => setViewingRecurringRow(row)}
-                          className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors cursor-pointer border border-zinc-700/60"
+                          className="h-7 w-7 rounded-lg flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors cursor-pointer border border-zinc-700/60"
                           title={`View History (${recCount})`}
                           aria-label={`View History (${recCount})`}
                         >
@@ -318,7 +318,7 @@ export const PlannedExpensesSection: React.FC<PlannedExpensesSectionProps> = ({ 
                             setPortionLabel(`Portion ${portionCount + 1}`);
                             setPortionAmount('');
                           }}
-                          className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-purple-300 hover:text-white transition-colors cursor-pointer border border-zinc-700/60"
+                          className="h-7 w-7 rounded-lg flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-purple-300 hover:text-white transition-colors cursor-pointer border border-zinc-700/60"
                           title="Add Portion"
                           aria-label="Add Portion"
                         >
@@ -327,7 +327,7 @@ export const PlannedExpensesSection: React.FC<PlannedExpensesSectionProps> = ({ 
                         <button
                           type="button"
                           onClick={() => setViewingPortionRow(row)}
-                          className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors cursor-pointer border border-zinc-700/60"
+                          className="h-7 w-7 rounded-lg flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors cursor-pointer border border-zinc-700/60"
                           title={`View Portions (${portionCount})`}
                           aria-label={`View Portions (${portionCount})`}
                         >
@@ -344,7 +344,7 @@ export const PlannedExpensesSection: React.FC<PlannedExpensesSectionProps> = ({ 
                           setQuickOneTimeRow(row);
                           setOneTimeAmount(row.amountSpent ? row.amountSpent.toString() : row.amountSet.toString());
                         }}
-                        className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-emerald-300 hover:text-white transition-colors cursor-pointer border border-zinc-700/60"
+                        className="h-7 w-7 rounded-lg flex items-center justify-center bg-zinc-800 hover:bg-zinc-700 text-emerald-300 hover:text-white transition-colors cursor-pointer border border-zinc-700/60"
                         title={row.amountSpent >= row.amountSet && row.amountSet > 0 ? 'Update Spend' : 'Pay / Set Spent'}
                         aria-label="Pay or Set Spent"
                       >
@@ -356,7 +356,7 @@ export const PlannedExpensesSection: React.FC<PlannedExpensesSectionProps> = ({ 
                     <button
                       type="button"
                       onClick={() => handleOpenEdit(row)}
-                      className="p-1.5 rounded-lg text-zinc-400 hover:bg-zinc-800 hover:text-white transition-colors cursor-pointer border border-transparent hover:border-zinc-700/60"
+                      className="h-7 w-7 rounded-lg flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors cursor-pointer border border-zinc-700/60"
                       title="Edit Category"
                       aria-label="Edit Category"
                     >
@@ -367,7 +367,7 @@ export const PlannedExpensesSection: React.FC<PlannedExpensesSectionProps> = ({ 
                     <button
                       type="button"
                       onClick={() => setDeletingCatId(row.masterId)}
-                      className="p-1.5 rounded-lg text-zinc-400 hover:bg-rose-950/40 hover:text-rose-400 transition-colors cursor-pointer border border-transparent hover:border-rose-800/40"
+                      className="h-7 w-7 rounded-lg flex items-center justify-center bg-zinc-800/80 hover:bg-rose-950/50 text-zinc-400 hover:text-rose-400 transition-colors cursor-pointer border border-zinc-700/60 hover:border-rose-800/60"
                       title="Delete category"
                       aria-label="Delete category"
                     >

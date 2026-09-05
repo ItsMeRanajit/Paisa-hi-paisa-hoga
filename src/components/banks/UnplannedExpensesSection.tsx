@@ -310,21 +310,23 @@ export const UnplannedExpensesSection: React.FC<UnplannedExpensesSectionProps> =
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2.5 shrink-0">
-                    <span className="font-mono font-bold text-white">{formatCurrency(item.amount)}</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="font-mono font-bold text-white pr-1">{formatCurrency(item.amount)}</span>
                     <button
                       type="button"
                       onClick={() => handleOpenEdit(item)}
-                      className="p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
-                      title="Edit"
+                      className="h-7 w-7 rounded-lg flex items-center justify-center bg-zinc-800/80 hover:bg-zinc-700 text-zinc-400 hover:text-white transition-colors cursor-pointer border border-zinc-700/60"
+                      title="Edit Expense"
+                      aria-label="Edit Expense"
                     >
                       <Edit2 className="h-3.5 w-3.5" />
                     </button>
                     <button
                       type="button"
                       onClick={() => setDeletingId(item.id)}
-                      className="p-1 text-zinc-400 hover:text-rose-400 transition-colors cursor-pointer"
-                      title="Delete"
+                      className="h-7 w-7 rounded-lg flex items-center justify-center bg-zinc-800/80 hover:bg-rose-950/50 text-zinc-400 hover:text-rose-400 transition-colors cursor-pointer border border-zinc-700/60 hover:border-rose-800/60"
+                      title="Delete Expense"
+                      aria-label="Delete Expense"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
